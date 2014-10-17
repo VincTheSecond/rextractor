@@ -1,0 +1,223 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use POSIX;
+
+use RExtractor::Tools;
+
+if (!scalar(@ARGV)) {
+    print STDERR "Use ./rextractor help for list of available commands.\n";
+    exit 1;
+}
+
+my $COMMAND = shift(@ARGV);
+
+##
+## TODO HELP
+## 
+
+##
+## SERVER MANAGEMENT
+## 
+
+# Starting server
+# Start daemons and than print the state
+if ($COMMAND eq "server-start") {
+    system("./conversion.pl");
+    system("./nlp.pl");
+    system("./entity.pl");
+    system("./relation.pl");
+    system("./export.pl");
+
+    $COMMAND = "server-state";
+    sleep(2);
+}
+
+# Server state
+# For each component server return state (on/off)
+if ($COMMAND eq "server-stop") {
+    my $existing_off = 0;
+    foreach my $server ("Conversion", "NLP", "Entity", "Relation", "Export") {
+        my $pid = RExtractor::Tools::readFile("./servers/pids/" . lc($server) . ".pid");
+        kill("INT", $pid);
+    }
+
+    $COMMAND = "server-state";
+    sleep(2);
+}
+
+# Server state
+# For each component server return state (on/off)
+if ($COMMAND eq "server-state") {
+    my $existing_off = 0;
+    foreach my $server ("Conversion", "NLP", "Entity", "Relation", "Export") {
+        my $pid = RExtractor::Tools::readFile("./servers/pids/" . lc($server) . ".pid");
+        my $state = ($pid and kill(0, $pid)) ? "ON" : "OFF";
+        if ($state eq "OFF") {
+            $existing_off = 1;
+        }
+        
+        print STDERR "$server server is $state.\n";
+    }
+
+    exit $existing_off ? 1 : 0;
+}
+
+##
+## DOCUMENT MANAGEMENT
+## 
+
+# Submiting documents into rextractor
+#  - copy file into server structure
+#  - create a log file
+#  - set a state to 200
+if ($COMMAND eq "document-submit") {
+    foreach my $file (@ARGV) {
+        my $id = $file;
+        $id =~ s/^(?:.*\/)?([^\/]+)\.\w+$/$1/;
+
+        print STDERR "$id\t";
+
+        # Fail if ID already exists in the system
+        if (RExtractor::Tools::findDocument($id)) {
+            print STDERR "[ERROR]\tDocument with ID $id already exists.\n";
+            exit 1;
+        }
+
+        # Copy file into submitted dir
+        if (system("cp $file ./data/submitted/$id.html")) {
+            print STDERR "[ERROR]\tError occured while copying original file into /data/submitted\n";
+            exit 1;
+        }
+
+        # Create log file, set status to 200 - Submited correctly.
+        if (!RExtractor::Tools::setDocumentStatus($id, "200 Submited correctly")) {
+            print STDERR "[ERROR]\tError occured while creating log file '/data/logs/$id.log'\n";
+            exit 1;
+        }
+
+        print STDERR "[OK]\tSubmited correctly.\n";
+    }
+
+    exit 0;
+}
+
+# For each document extract ID.
+# Print error message if document doesn't exists or
+# print current state of the document.
+if ($COMMAND eq "document-state") {
+    my @files = @ARGV;
+    foreach my $file (@files) {
+        my $file = shift(@ARGV);
+
+        # Parse document ID
+        my $id = $file;
+        $id =~ s/^(?:.*\/)?([^\/]+)$/$1/;
+
+        if (!RExtractor::Tools::findDocument($id)) {
+            print STDERR "$id\t[ERROR]\tDocument doesn't exist.\n";
+            next;
+        }
+
+        # Read last file from the log
+        print STDERR "$id\t[STATE]\t" . RExtractor::Tools::getDocumentStatus($id);
+        print STDERR "\n";
+    }
+
+    exit 0;
+}
+
+if ($COMMAND eq "document-delete") {
+    my @files = @ARGV;
+    foreach my $file (@files) {
+        my $id = $file;
+        $id =~ s/^(?:.*\/)?([^\/]+)$/$1/;
+
+        print STDERR "$id\t";
+
+        # Check state of the document. Don't remove them if any
+        # server work with the document.
+        my $status = RExtractor::Tools::getDocumentStatus($id);
+        if ($status =~ /^(300|400|500|600|700)/) {
+            print STDERR "[ERROR]\tServer is working with the document at this moment.\n";
+            exit 1;
+        }
+
+        # Delete files with given id prefix
+        system("rm ./data/converted/$id.* 2>/dev/null");
+        system("rm ./data/exported/$id.* 2>/dev/null");
+        system("rm ./data/logs/$id.* 2>/dev/null");
+        system("rm ./data/submitted/$id.* 2>/dev/null");
+        system("rm ./data/treex/$id.* 2>/dev/null");
+        system("rm ./data/serialized/$id.* 2>/dev/null");
+
+        system("rm ./servers/tmp/entity/$id.* 2>/dev/null");
+        system("rm -rf ./servers/tmp/nlp/$id/ 2>/dev/null");
+        system("rm ./servers/tmp/export/$id.* 2>/dev/null");
+        system("rm ./servers/tmp/relation/$id.* 2>/dev/null");
+
+        print STDERR "[OK]\tDeleted.\n";
+    }
+
+    exit 0;
+}
+
+##
+## LIST OF FILES
+##
+
+my @list = ();
+
+if ($COMMAND eq "list-submit") {
+    @list = split(/\n/, `grep 200 data/logs/* | cut -f 1 -d ':' | cut -f 3 -d '/' | cut -f 1 -d '.'`);
+    exit 0;
+}
+
+if ($COMMAND eq "list-convert") {
+    @list = split(/\n/, `grep 320 data/logs/* | cut -f 1 -d ':' | cut -f 3 -d '/' | cut -f 1 -d '.'`);
+}
+
+if ($COMMAND eq "list-nlp") {
+    @list = split(/\n/, `grep 420 data/logs/* | cut -f 1 -d ':' | cut -f 3 -d '/' | cut -f 1 -d '.'`);
+}
+
+if ($COMMAND eq "list-entity") {
+    @list = split(/\n/, `grep 520 data/logs/* | cut -f 1 -d ':' | cut -f 3 -d '/' | cut -f 1 -d '.'`);
+}
+
+if ($COMMAND eq "list-relation") {
+    @list = split(/\n/, `grep 620 data/logs/* | cut -f 1 -d ':' | cut -f 3 -d '/' | cut -f 1 -d '.'`);
+}
+
+if ($COMMAND eq "list-export") {
+    @list = split(/\n/, `grep 720 data/logs/* | cut -f 1 -d ':' | cut -f 3 -d '/' | cut -f 1 -d '.'`);
+}
+
+my $timestamp = shift(@ARGV);
+if (!defined($timestamp) or $timestamp !~ /^\d+$/) {
+    print join("\n", @list);
+    exit 0;
+}
+
+foreach my $id (@list) {
+    my (
+        $dev,
+        $ino,
+        $mode,
+        $nlink,
+        $uid,
+        $gid,
+        $rdev,
+        $size,
+        $atime,
+        $mtime,
+        $ctime,
+        $blksize,
+        $blocks
+    ) = stat("data/logs/$id.log");
+
+    if ($mtime >= $timestamp) {
+        print "$id\n";
+    }
+}
