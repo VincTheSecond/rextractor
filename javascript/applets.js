@@ -23,9 +23,9 @@ function run_text(text_id) {
     applet_text_box(text_id);
 }
 
-function run_list(id_to_highlight) {
+function run_list(id_to_highlight, refresh) {
     clear_main_column();
-    applet_list(id_to_highlight);
+    applet_list(id_to_highlight, refresh);
 }
 
 function run_submit() {
@@ -101,26 +101,29 @@ function applet_text_box(text_id) {
     });
 }
 
-function applet_list(id_to_highlight) {
-    var output = "";
-    output += "<div class='box'>";
-    output += "<h2>List of submitted documents</h2>"
-    output += "<div class='loading'></div>";
-    output += "<div class='message'>" + message + "</div>";
-    output += "<div class='data'></div>";
-    output += "</div>";
-
+function applet_list(id_to_highlight, refresh) {
     // Clear timeout
     clearTimeout(timeout);
 
     // Clear message
     message = "";
 
-    // Hide loading and show table
-    var box = jQuery('#main-column').append(output);
-    jQuery('#main-column').find('.box').each(function() {
-        jQuery(this).slideDown();
-    });
+    var output = "";
+
+    if (!refresh) {
+        output += "<div class='box'>";
+        output += "<h2>List of submitted documents</h2>"
+        output += "<div class='loading'></div>";
+        output += "<div class='message'>" + message + "</div>";
+        output += "<div class='data'></div>";
+        output += "</div>";
+
+        // Hide loading and show table
+        box = jQuery('#main-column').append(output);
+        jQuery('#main-column').find('.box').each(function() {
+            jQuery(this).slideDown();
+        });
+    }
 
     jQuery.ajax({
         url: "./index.cgi?command=list-all",
@@ -173,15 +176,17 @@ function applet_list(id_to_highlight) {
                 output += "<td><img src='" + icon + "'></td>";
                 output += "<td>" + progress_bar + "</td>";
                 output += "<td>" + fields[2] + "</td>";
-
-                //jobs[i].replace(/\t/g, "</td><td>") + "</td></tr>";
             }
             output += "</table>";
-            output += 
 
-            box.find('.loading').slideUp();
-            box.find('.data').html(output);
-            box.find('.data').slideDown();
+            if (!refresh) {
+                box.find('.loading').slideUp();
+                box.find('.data').html(output);
+                box.find('.data').slideDown();
+            }
+            else {
+                box.find('.data').html(output);
+            }
 
             box.find('.data').find('tr').each(function() {
                 jQuery(this).click(function() {
@@ -195,7 +200,7 @@ function applet_list(id_to_highlight) {
         }
     });
 
-    timeout = setTimeout("run_list('" + id_to_highlight + "')", 60000);
+    timeout = setTimeout("applet_list('" + id_to_highlight + "', 1)", 10000);
 }
 
 function applet_submit() {
