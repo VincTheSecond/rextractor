@@ -254,6 +254,11 @@ function applet_submit_click() {
         run_submit();
     }
 
+    // If there is no HTML tags, put <p> tags around the text
+    if (!content.match(/^<p>/)) {
+        content = "<p>" + content + "</p>";
+    }
+
     // Everything OK, submit query on the server
     jQuery.ajax({
         url: "./index.cgi?command=document-submit",
@@ -517,5 +522,5 @@ function get_document_state(id, box) {
     });
 
     var call = "get_document_state('" + id + "')";
-    timeout = setTimeout(call, 60000);
+    timeout = setTimeout(call, 10000);
 }
