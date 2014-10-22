@@ -1,7 +1,84 @@
 <h2>Learn more about RExtractor</h2>
-<p>RExtractor is a new system for extracting a knowledge base from unstructured texts. We define the knowledhe base as a set of entities and relations between them.</p>
-<p>To play with RExtractor, you can submit new document into the joblist or browse throw the processed documents.</p>
+
+<p>RExtractor is a system that extracts a knowledge base from raw unstructured texts that is designed as a set of entities and their relations and represented in an ontological framework. The extraction pipeline processes input texts by linguistically-aware tools and extracts entities and relations from their syntactic representation. Consequently, the extracted data is represented according to the Linked Data principles. The system is designed both domain and language independent and provides users with data for more intelligent search than full-text search.</p>
+
+<h3>Extraction strategy</h3>
+
+<p>RExtractor consists of four compoments:</p>
+<center><img src="images/pipeline.svg" width=700></center>
+
+<h4>Conversion</h4>
+
+<p>A largely technical component converting various input formats into internal representation.</p>
+
+<h4>Natural Language Processing</h4>
+
+<p>A linguistic component providing various analyses of input texts, namely sentence segmentation, tokenization, morphological analysis, part-of-speech tagging, and syntactic parsing. Currently employed procedures fit the framework originally formulated in the <a href="http://ufal.mff.cuni.cz/pdt3.0/">Prague Dependency Treebank</a> (PDT).</p>
+
+<p>The dependency approach to syntactic parsing with the main role of verb is applied and it results in a dependency tree where each token in the sentence has one corresponding node and dependencies are assigned with the syntactic dependency relation. For illustration, assume the sentence <em>(3) Accounting units, which keep books in simplified extent, create fixed items and reserves according to special legal regulations</em>. Its dependency tree is displayed in following Figure:
+<center><img src="images/tree.svg"></center></p>
+
+<h4>Entity Detection</h4>
+
+<p>An extraction component querying dependency trees to detect entities stored in Database of Entities (DBE) in texts and it exploits the <a href="http://ufal.mff.cuni.cz/pmltq/">PML-TQ tool</a>. DBE is built by domain experts. We prefer querying dependency trees to matching texts with regular expressions because it allows us to detect entities with more complex structures, like coordinations. Figure displays the dependency tree of coordination <em>current tangible and intangible assets</em>. Using the PML-TQ query displayed in the Figure, we detect the entity <em>current tangible assets</em> in the tree.
+<center><img src="images/entities_detection.svg"></center></p>
+
+<p>Figure below presents entities detected in the sentence <em>(3) Accounting units, which keep books in simplified extent, create fixed items and reserves according to special legal regulations</em>:
+<center><img src="images/entities.svg"></center></p>
+
+<h4>Relation Extraction</h4>
+
+<p>An extraction component querying dependency trees with highlighted entities to detect relations between them. It exploits the PML-TQ tool as well and poses queries stored in Database of Queries (DBQ). DBS is built by both domain and PML-TQ experts.</p>
+
+<p>For illustration, assume the sentence <em>(3) Accounting units, which keep books in simplified extent, create fixed items and reserves according to special legal regulations</em>, its dependency tree and the query displayed in Figure:
+<center><img src="images/entities.svg"></center></p>
+
+<p>Table below lists data extracted from the given tree by the given query:
+<center>
+<table class='list'>
+    <tr>
+        <th>Subject</th>
+        <th>Predicate</th>
+        <th>Object</th>
+    </tr>
+    <tr>
+        <td><em>Entity</em></td>
+        <td><em>hasToCreate</em></td>
+        <td><em>Something</em></td>
+    </tr>
+    <tr>
+        <td>Accounting units</td>
+        <td>crate</td>
+        <td>fixed items</td>
+    </tr>
+    <tr>
+        <td>Accounting units</td>
+        <td>crate</td>
+        <td>reserves</td>
+    </tr>
+</table>
+</center>
+</p>
 
 <h2>References</h2>
-<p>Slides & talks</p>
-<p>Papers</p>
+
+<h3>Grants</h3>
+<ul>
+    <li>We gratefully acknowledge support from the Technology Agency of the Czech Republic (grant no. <a href="http://ufal.mff.cuni.cz/grants/intelligent-library">TA02010182</a>).</li>
+</ul>
+
+<h3>Slides & talks</h3>
+<ul>
+    <li>2014-05-12 -- Nečaský Martin, Hladká Barbora, Kríž Vincent: Data Extraction with NLP techniques and its Transformation to Linked Data. <a href="http://ufal.mff.cuni.cz/events/linguistic-mondays" target="_blank">Linguistic Mondays</a>, MFF UK, Prague.
+    <li>2013-12-19 -- Kríž Vincent: Detecting Entity Relations in Texts. <a href="http://keg.vse.cz/" target="_blank">Seminar KEG</a>, VŠE, Prague. <a href="http://keg.vse.cz/_slides/kriz.pdf">Slides</a></li>
+    <li>2013-06-05 -- Kríž Vincent: Detecting Semantic Relations in Texts and Their Integration with External Data Resources. <a href="http://www.mff.cuni.cz/veda/konference/wds/" target="_blank">WDS 2013</a>, MFF UK, Prague. <a href="https://ufal.mff.cuni.cz/sites/default/files/purl_legacy/kriz/public_html/talks/wds2013.pdf">Slides</a></li>
+</ul>
+
+<h3>Papers</h3>
+<ul>
+   <li>Kríž Vincent, Hladká Barbora, Nečaský Martin, Knap Tomáš. Data Extraction using NLP techniques and its Transformation to Linked Data. Accepted for the 13th Mexican International Conference on Artificial Intelligence, Tuxtla Guti, Chiapas, Mexico, 2014.</li>
+   <li>Holubová I., Knap T., Kríž V., Nečaský M., Vidová Hladká B.: INTLIB - an INTelligent LIBrary, in CEUR Workshop Proceedings, Roudnice nad Labem, MatfyzPress, ISBN: 978-80-01-05482-6, ISSN: 1613-0073, pp. 13-24, 2014</li>
+   <li>Kríž Vincent: Detecting Semantic Relations in Texts and Their Integration with External Data Resources. In: WDS'13 Proceedings of Contributed Papers, Copyright © Matfyzpress, Praha, Czechia, 2013.</li>
+   <li>Nečaský Martin, Knap Tomáš, Klímek Jakub, Holubová Irena, Hladká Barbora: Linked Open Data for Legislative Domain - Ontology and Experimental Data. In: Lecture Notes in Business Information Processing, Copyright © Springer Berlin Heidelberg, ISBN 978-3-642-41686-6, pp. 172-183, 2013.</li>
+</ul>
+<p>
