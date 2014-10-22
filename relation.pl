@@ -110,7 +110,7 @@ while (42) {
         # Delete tmp files
         system("rm -rf ./servers/tmp/relation/$document->{id}.csv");
         RExtractor::Tools::error($LOG, "Couldn't load XML document ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Error occured during loading XML document ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Error occured during loading XML document.");
         RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
         next;
     }
@@ -120,7 +120,7 @@ while (42) {
         # Delete tmp files
         system("rm -rf ./servers/tmp/relation/$document->{id}.csv");
         RExtractor::Tools::error($LOG, "Couldn't parse entities XML document ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Error occured during pasring entities in XML document ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Error occured during pasring entities in XML document.");
         RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
         next;
     }
@@ -131,7 +131,7 @@ while (42) {
         # Delete tmp files
         system("rm -rf ./servers/tmp/relation/$document->{id}.csv");
         RExtractor::Tools::error($LOG, "Couldn't open serialized file './data/serialized/$document->{id}.csv'.");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Error occured during loading Serialized file ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Error occured during loading Serialized file.");
         RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
         next;
     }
@@ -143,7 +143,7 @@ while (42) {
         # Delete tmp files
         system("rm -rf ./servers/tmp/relation/$document->{id}.csv");
         RExtractor::Tools::error($LOG, "Couldn't load PMLTQ results from file '$output_file' ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Error occured during parsing PMLTQ results for document ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Error occured during parsing PMLTQ results for document.");
         RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
         next;
     }
@@ -152,7 +152,7 @@ while (42) {
         # Delete tmp files
         system("rm -rf ./servers/tmp/relation/$document->{id}.csv");
         RExtractor::Tools::error($LOG, "Couldn't save relations annotations in document ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Error occured during annotating relations in document ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Error occured during annotating relations in document.");
         RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
         next;
     }
@@ -163,7 +163,7 @@ while (42) {
     system("mv ./servers/tmp/relation/$document->{id}.xml ./data/converted/$document->{id}.xml");
     system("rm ./servers/tmp/relation/$document->{id}.*");
     RExtractor::Tools::info($LOG, "Relation detection in the document $document->{id} finished.");
-    RExtractor::Tools::setDocumentStatus($document->{id}, "620 Document annotated sucessfully.");
+    RExtractor::Tools::setDocumentStatus($document->{id}, "620 Document annotated successfully.");
     RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
 
     system("touch servers/pids/relation.pid");
@@ -206,7 +206,7 @@ sub _getDocument {
         RExtractor::Tools::writeFile("./data/treex/$id.lock", "relation");
 
         # Log
-        RExtractor::Tools::setDocumentStatus($id, "600 Relation detection started");
+        RExtractor::Tools::setDocumentStatus($id, "600 Relation detection started.");
 
         # Return document id
         return {filename => $file, id => $id};

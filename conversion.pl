@@ -69,7 +69,7 @@ while (42) {
     ## Save and unlock document
     $Convertor->saveFile("./data/converted/$document->{id}.xml");
     RExtractor::Tools::info($LOG, "Conversion of the document $document->{id} finished.");
-    RExtractor::Tools::setDocumentStatus($document->{id}, "320 Document converted sucessfully.");
+    RExtractor::Tools::setDocumentStatus($document->{id}, "320 Document converted successfully.");
     RExtractor::Tools::deleteFile("./data/submitted/$document->{id}.lock");
 
     $processed{$document->{id}} = defined;
@@ -119,7 +119,7 @@ sub _getDocument {
         RExtractor::Tools::writeFile("./data/submitted/$id.lock", "conversion");
 
         # Log
-        RExtractor::Tools::setDocumentStatus($id, "300 Conversion started");
+        RExtractor::Tools::setDocumentStatus($id, "300 Conversion started.");
 
         # Return document id
         return {filename => $file, id => $id};

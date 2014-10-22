@@ -145,7 +145,7 @@ while (42) {
     ## Everything OK, log and unlock document
     system("rm -rf ./servers/tmp/nlp/$document->{id}");
     RExtractor::Tools::info($LOG, "NLP of the document $document->{id} finished.");
-    RExtractor::Tools::setDocumentStatus($document->{id}, "420 Document processed sucessfully.");
+    RExtractor::Tools::setDocumentStatus($document->{id}, "420 Document processed successfully.");
     RExtractor::Tools::deleteFile("./data/converted/$document->{id}.lock");
 
     system("touch servers/pids/nlp.pid");
@@ -156,7 +156,7 @@ while (42) {
 ## 
 ## Document must not have a lock file, it should have
 ## own log file and last message in the log should be
-## 320 Document converted sucessfully.
+## 320 Document converted successfully.
 ##
 sub _getDocument {
     foreach my $file (split(/\n/, `find ./data/converted/ -type f -name '*.xml'`)) {
@@ -188,7 +188,7 @@ sub _getDocument {
         RExtractor::Tools::writeFile("./data/converted/$id.lock", "nlp");
 
         # Log
-        RExtractor::Tools::setDocumentStatus($id, "400 Language processing started");
+        RExtractor::Tools::setDocumentStatus($id, "400 Language processing started.");
 
         # Return document id
         return {filename => $file, id => $id};

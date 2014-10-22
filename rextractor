@@ -92,7 +92,7 @@ if ($COMMAND eq "document-submit") {
         }
 
         # Create log file, set status to 200 - Submited correctly.
-        if (!RExtractor::Tools::setDocumentStatus($id, "200 Submited correctly")) {
+        if (!RExtractor::Tools::setDocumentStatus($id, "200 Submited correctly.")) {
             print STDERR "[ERROR]\tError occured while creating log file '/data/logs/$id.log'\n";
             exit 1;
         }

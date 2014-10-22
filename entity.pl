@@ -70,9 +70,9 @@ while (42) {
     );
     if ($treex_return_value) {
         # Delete tmp files
-        #system("rm -rf ./servers/tmp/entity/$document->{id}.csv");
+        system("rm -rf ./servers/tmp/entity/$document->{id}.csv");
         RExtractor::Tools::error($LOG, "Error occured while entity detection process in the document ($document->{id}).");
-        #RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during entity detection in treex.");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during entity detection in treex.");
         RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
         next;
     }
@@ -87,7 +87,7 @@ while (42) {
         # Delete tmp files
         system("rm -rf ./servers/tmp/entity/$document->{id}.csv");
         RExtractor::Tools::error($LOG, "Couldn't load XML document ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during loading XML document ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during loading XML document.");
         RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
         next;
     }
@@ -96,7 +96,7 @@ while (42) {
         # Delete tmp files
         system("rm -rf ./servers/tmp/entity/$document->{id}.csv");
         RExtractor::Tools::error($LOG, "Couldn't parse XML document ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during parsing XML document ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during parsing XML document.");
         RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
         next;
     }
@@ -107,7 +107,7 @@ while (42) {
         # Delete tmp files
         system("rm -rf ./servers/tmp/entity/$document->{id}.csv");
         RExtractor::Tools::error($LOG, "Couldn't open serialized file './data/serialized/$document->{id}.csv'.");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during loading Serialized file ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during loading serialized file.");
         RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
         next;
     }
@@ -119,7 +119,7 @@ while (42) {
         # Delete tmp files
         system("rm -rf ./servers/tmp/entity/$document->{id}.csv");
         RExtractor::Tools::error($LOG, "Couldn't load PMLTQ results from file '$output_file' ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during parsing PMLTQ results for document ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during parsing PMLTQ results for document.");
         RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
         next;
     }
@@ -128,7 +128,7 @@ while (42) {
         # Delete tmp files
         system("rm -rf ./servers/tmp/entity/$document->{id}.csv");
         RExtractor::Tools::error($LOG, "Couldn't save entity annotations in document ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during annotating entities in document ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during annotating entities in document.");
         RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
         next;
     }
@@ -139,7 +139,7 @@ while (42) {
     system("mv ./servers/tmp/entity/$document->{id}.xml ./data/converted/$document->{id}.xml");
     system("rm ./servers/tmp/entity/$document->{id}.*");
     RExtractor::Tools::info($LOG, "Entity detection in the document $document->{id} finished.");
-    RExtractor::Tools::setDocumentStatus($document->{id}, "520 Document annotated sucessfully.");
+    RExtractor::Tools::setDocumentStatus($document->{id}, "520 Document annotated successfully.");
     RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
 
     system("touch servers/pids/entity.pid");
@@ -182,7 +182,7 @@ sub _getDocument {
         RExtractor::Tools::writeFile("./data/treex/$id.lock", "entity");
 
         # Log
-        RExtractor::Tools::setDocumentStatus($id, "500 Entity detection started");
+        RExtractor::Tools::setDocumentStatus($id, "500 Entity detection started.");
 
         # Return document id
         return {filename => $file, id => $id};

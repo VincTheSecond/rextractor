@@ -57,7 +57,7 @@ while (42) {
     my $Document = new RExtractor::Document();
     if (!$Document->load("./data/converted/$document->{id}.xml")) {
         RExtractor::Tools::error($LOG, "Couldn't load XML document ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "710 Error occured during loading XML document ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "710 Error occured during loading XML document.");
         RExtractor::Tools::deleteFile("./data/converted/$document->{id}.lock");
         next;
     }
@@ -68,7 +68,7 @@ while (42) {
         !$Document->parseChunks() or
         !$Document->parseEntities()) {
         RExtractor::Tools::error($LOG, "Couldn't parse description records XML document ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "710 Error occured during pasring description records in XML document ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "710 Error occured during pasring description records in XML document.");
         RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
         next;
     }
@@ -77,7 +77,7 @@ while (42) {
     my $Serialized = new RExtractor::Annotation::Serialize();
     if (!$Serialized->load("./data/serialized/$document->{id}.csv")) {
         RExtractor::Tools::error($LOG, "Couldn't open serialized file './data/serialized/$document->{id}.csv'.");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "710 Error occured during loading Serialized file ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "710 Error occured during loading Serialized file.");
         RExtractor::Tools::deleteFile("./data/converted/$document->{id}.lock");
         next;
     }
@@ -85,14 +85,14 @@ while (42) {
     my $Export = new RExtractor::Export::INTLIB();
     if (!$Export->load("./data/submitted/$document->{id}.html")) {
         RExtractor::Tools::error($LOG, "Couldn't open submitted HTML file './data/submitted/$document->{id}.html'.");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "710 Error occured during loading submitted file ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "710 Error occured during loading submitted file.");
         RExtractor::Tools::deleteFile("./data/converted/$document->{id}.lock");
         next;
     }
 
     if (!$Export->export($Document, $Serialized)) {
         RExtractor::Tools::error($LOG, "Couldn't export annotation into file './data/submitted/$document->{id}.html'.");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "710 Error occured during export process ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "710 Error occured during export process.");
         RExtractor::Tools::deleteFile("./data/converted/$document->{id}.lock");
         next;
     }
@@ -102,7 +102,7 @@ while (42) {
 
     ## Everything OK, log and unlock document
     RExtractor::Tools::info($LOG, "Export process for document $document->{id} finished.");
-    RExtractor::Tools::setDocumentStatus($document->{id}, "720 Document exported sucessfully.");
+    RExtractor::Tools::setDocumentStatus($document->{id}, "720 Document exported successfully.");
     RExtractor::Tools::deleteFile("./data/converted/$document->{id}.lock");
 
     system("touch servers/pids/export.pid");
@@ -145,7 +145,7 @@ sub _getDocument {
         RExtractor::Tools::writeFile("./data/converted/$id.lock", "export");
 
         # Log
-        RExtractor::Tools::setDocumentStatus($id, "700 Export process started");
+        RExtractor::Tools::setDocumentStatus($id, "700 Export process started.");
 
         # Return document id
         return {filename => $file, id => $id};
