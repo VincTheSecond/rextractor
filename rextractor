@@ -29,14 +29,44 @@ if ($COMMAND =~ /(?:list-(?:submit|convert|nlp|entity|relation|export))/ and sca
     exit 1;
 }
 
-##
-## TODO HELP
-## 
+## Help
+if ($COMMAND eq "help") {
+    print STDERR "usage: ./rextractor <command> <parameters>\n\n";
+    print STDERR "The most commonly used rextractor commands are:\n";
+    print STDERR "   server-start\n";
+    print STDERR "      Start all RExtractor daemons.\n\n";
+    print STDERR "   server-stop\n";
+    print STDERR "      Stop all RExtractor daemons.\n\n";
+    print STDERR "   server-state\n";
+    print STDERR "      Print current state of each daemon.\n\n";
+    print STDERR "   document-state <document ID>\n";
+    print STDERR "      Print current state of given document ID.\n\n";
+    print STDERR "   document-submit <path to file>\n";
+    print STDERR "      Submit given filne into RExtractor.\n\n";
+    print STDERR "   document-delete <document ID>\n";
+    print STDERR "      Delete given document from RExtractor system.\n\n";
+    print STDERR "   content-html <document ID>\n";
+    print STDERR "      Return document with marked text-chunks for HTML presentation.\n\n";
+    print STDERR "   content-chunks <document ID> <chunk ID>\n";
+    print STDERR "      Return details about given chunk ID.\n\n";
+    print STDERR "   content-relations <document ID>\n";
+    print STDERR "      Return table of relations detected in the document.\n\n";
+    print STDERR "   list-submit <fromDate|NO> <toDate|NO> <fromDateTime|NO> <toDateTime|NO>\n";
+    print STDERR "      Return list of submitted documents in given time (if specified).\n\n";
+    print STDERR "   list-convert <fromDate|NO> <toDate|NO> <fromDateTime|NO> <toDateTime|NO>\n";
+    print STDERR "      Return list of converted documents in given time (if specified).\n\n";
+    print STDERR "   list-nlp\n";
+    print STDERR "      Return list of documents processed by NLP tools in given time (if specified).\n\n";
+    print STDERR "   list-entity <fromDate|NO> <toDate|NO> <fromDateTime|NO> <toDateTime|NO>\n";
+    print STDERR "      Return list of documents with detected entities in given time (if specified).\n\n";
+    print STDERR "   list-relation <fromDate|NO> <toDate|NO> <fromDateTime|NO> <toDateTime|NO>\n";
+    print STDERR "      Return list of documents with detected relations in given time (if specified).\n\n";
+    print STDERR "   list-export <fromDate|NO> <toDate|NO> <fromDateTime|NO> <toDateTime|NO>\n";
+    print STDERR "      Return list of exported documents in given time (if specified).\n\n";
+    print STDERR "   list-all <start> <limit>\n";
+    print STDERR "      Return list of submitted documents from given start offset and number of results.\n\n";
+}
 
-
-##
-## SERVER MANAGEMENT
-## 
 
 ## A.1 SERVER START
 ## Start each RExtractor daemon
