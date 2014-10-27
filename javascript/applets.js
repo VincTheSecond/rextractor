@@ -10,6 +10,8 @@ var message = "";
 var highlight = "";
 var box = undefined;
 var timeout = undefined;
+var list_start = 0;
+var list_limit = 10;
 
 // Start with welcome screen
 jQuery('body').ready(function() {
@@ -126,7 +128,7 @@ function applet_list(id_to_highlight, refresh) {
     }
 
     jQuery.ajax({
-        url: "./index.cgi?command=list-all",
+        url: "./index.cgi?command=list-all&start=" + list_start + "&limit=" + list_limit,
         success: function(data) {
             var jobs = data.split('\n');
 
@@ -134,7 +136,7 @@ function applet_list(id_to_highlight, refresh) {
             var output = "";
             output += "<table class='list'>";
             output += "<tr><th>Document</th><th>Submition time</th><th colspan=3>State</th></tr>";
-            for (var i = 0; i < jobs.length; i++) {
+            for (var i = 2; i < jobs.length; i++) {
                 if (!jobs[i].match(/./)) {
                     continue;
                 }
@@ -179,6 +181,16 @@ function applet_list(id_to_highlight, refresh) {
             }
             output += "</table>";
 
+            // First line contains data for paging...
+            var pagging = jobs[1].split("\t");
+            output += "<p>Presenting <b>" + (list_start + 1) + "</b> - <b>" + (list_start + list_limit) + "</b> jobs from <b>" + pagging[0] + "</b> jobs in total. | ";
+            if (list_start > 0) {
+                output += "<a href='javascript:list_previous()'>Show previous jobs</a>";
+            }
+            if (list_start + list_limit < pagging[0]) {
+                output += "<a href='javascript:list_next()'>Show next jobs</a>";
+            }
+
             if (!refresh) {
                 box.find('.loading').slideUp();
                 box.find('.data').html(output);
@@ -201,6 +213,17 @@ function applet_list(id_to_highlight, refresh) {
     });
 
     timeout = setTimeout("applet_list('" + id_to_highlight + "', 1)", 10000);
+}
+
+function list_previous() {
+    list_start -= 10;
+    list_start = list_start < 0 ? 0 : list_start;
+    applet_list("", 1);
+}
+
+function list_next() {
+    list_start += 10;
+    applet_list("", 1);
 }
 
 function applet_submit() {

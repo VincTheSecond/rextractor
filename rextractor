@@ -5,219 +5,159 @@ use warnings;
 use POSIX;
 
 use RExtractor::Tools;
+use RExtractor::API;
 
 if (!scalar(@ARGV)) {
     print STDERR "Use ./rextractor help for list of available commands.\n";
     exit 1;
 }
 
+# Parse command-line parameters
 my $COMMAND = shift(@ARGV);
+
+# Check command-line parameters
+if ($COMMAND =~ /(?:document-(?:state|submit|delete)|content-(?:html|relations))/ and scalar(@ARGV) != 1) {
+    print STDERR "Use ./rextractor help for list of available commands.\n";
+    exit 1;
+}
+if ($COMMAND =~ /(?:content-(?:chunks)|list-all)/ and scalar(@ARGV) != 2) {
+    print STDERR "Use ./rextractor help for list of available commands.\n";
+    exit 1;
+}
+if ($COMMAND =~ /(?:list-(?:submit|convert|nlp|entity|relation|export))/ and scalar(@ARGV) != 4) {
+    print STDERR "Use ./rextractor help for list of available commands.\n";
+    exit 1;
+}
 
 ##
 ## TODO HELP
 ## 
 
+
 ##
 ## SERVER MANAGEMENT
 ## 
 
-# Starting server
-# Start daemons and than print the state
+## A.1 SERVER START
+## Start each RExtractor daemon
 if ($COMMAND eq "server-start") {
-    system("./conversion.pl");
-    system("./nlp.pl");
-    system("./entity.pl");
-    system("./relation.pl");
-    system("./export.pl");
+    RExtractor::API::a1_server_start();
 
     $COMMAND = "server-state";
     sleep(2);
 }
 
-# Server state
-# For each component server return state (on/off)
+## A.2 SERVER STOP
+## Send terminating signal to each RExtractor daemon.
 if ($COMMAND eq "server-stop") {
-    my $existing_off = 0;
-    foreach my $server ("Conversion", "NLP", "Entity", "Relation", "Export") {
-        my $pid = RExtractor::Tools::readFile("./servers/pids/" . lc($server) . ".pid");
-        kill("INT", $pid);
-    }
+    RExtractor::API::a2_server_stop();
 
     $COMMAND = "server-state";
     sleep(2);
 }
 
-# Server state
-# For each component server return state (on/off)
+## A.3 SERVER STATE
+## For each component server return state (on/off)
 if ($COMMAND eq "server-state") {
-    my $existing_off = 0;
-    foreach my $server ("Conversion", "NLP", "Entity", "Relation", "Export") {
-        my $pid = RExtractor::Tools::readFile("./servers/pids/" . lc($server) . ".pid");
-        my $state = ($pid and kill(0, $pid)) ? "ON" : "OFF";
-        if ($state eq "OFF") {
-            $existing_off = 1;
-        }
-        
-        print STDERR "$server server is $state.\n";
-    }
+    my @output = RExtractor::API::a3_server_state();
+    print STDERR join("", @output);
 
-    exit $existing_off ? 1 : 0;
+    my $existing_off = scalar(grep(/OFF/, @output)) ? 1 : 0;
+    exit $existing_off;
 }
 
-##
-## DOCUMENT MANAGEMENT
-## 
-
-# Submiting documents into rextractor
-#  - copy file into server structure
-#  - create a log file
-#  - set a state to 200
-if ($COMMAND eq "document-submit") {
-    foreach my $file (@ARGV) {
-        my $id = $file;
-        $id =~ s/^(?:.*\/)?([^\/]+)\.\w+$/$1/;
-
-        print STDERR "$id\t";
-
-        # Fail if ID already exists in the system
-        if (RExtractor::Tools::findDocument($id)) {
-            print STDERR "[ERROR]\tDocument with ID $id already exists.\n";
-            exit 1;
-        }
-
-        # Copy file into submitted dir
-        if (system("cp $file ./data/submitted/$id.html")) {
-            print STDERR "[ERROR]\tError occured while copying original file into /data/submitted\n";
-            exit 1;
-        }
-
-        # Create log file, set status to 200 - Submited correctly.
-        if (!RExtractor::Tools::setDocumentStatus($id, "200 Submited correctly.")) {
-            print STDERR "[ERROR]\tError occured while creating log file '/data/logs/$id.log'\n";
-            exit 1;
-        }
-
-        print STDERR "[OK]\tSubmited correctly.\n";
-    }
-
-    exit 0;
-}
-
-# For each document extract ID.
-# Print error message if document doesn't exists or
-# print current state of the document.
+## B.1 DOCUMENT STATE
+## Returns document state number and message.
+## Returns submition time (YYYY-MM-DD HH:MM:SS).
 if ($COMMAND eq "document-state") {
-    my @files = @ARGV;
-    foreach my $file (@files) {
-        my $file = shift(@ARGV);
+    # Check parameter
+    my $doc_id = shift(@ARGV);
+    my $output = RExtractor::API::b1_document_state($doc_id);
 
-        # Parse document ID
-        my $id = $file;
-        $id =~ s/^(?:.*\/)?([^\/]+)$/$1/;
-
-        if (!RExtractor::Tools::findDocument($id)) {
-            print STDERR "$id\t[ERROR]\tDocument doesn't exist.\n";
-            next;
-        }
-
-        # Read last file from the log
-        print STDERR "$id\t[STATE]\t" . RExtractor::Tools::getDocumentStatus($id);
-        print STDERR "\n";
-    }
-
-    exit 0;
+    print STDERR $output;
+    exit $output =~ /ERROR/ ? 1 : 0;
 }
 
+## B.2 SUBMIT NEW DOCUMENT
+## Filename of the document is the second parameter of the command-line
+if ($COMMAND eq "document-submit") {
+    # Check parameter
+    my $filename = shift(@ARGV);
+    my $output = RExtractor::API::b2_document_submit(undef, undef, $filename);
+
+    print STDERR $output;
+    exit $output =~ /ERROR/ ? 1 : 0;
+}
+
+## B.3 DOCUMENT DELETE
+## Removes document from the system
 if ($COMMAND eq "document-delete") {
-    my @files = @ARGV;
-    foreach my $file (@files) {
-        my $id = $file;
-        $id =~ s/^(?:.*\/)?([^\/]+)$/$1/;
+    my $doc_id = shift(@ARGV);
+    my $output = RExtractor::API::b3_document_delete($doc_id);
 
-        print STDERR "$id\t";
-
-        # Check state of the document. Don't remove them if any
-        # server work with the document.
-        my $status = RExtractor::Tools::getDocumentStatus($id);
-        if ($status =~ /^(300|400|500|600|700)/) {
-            print STDERR "[ERROR]\tServer is working with the document at this moment.\n";
-            exit 1;
-        }
-
-        # Delete files with given id prefix
-        system("rm ./data/converted/$id.* 2>/dev/null");
-        system("rm ./data/exported/$id.* 2>/dev/null");
-        system("rm ./data/logs/$id.* 2>/dev/null");
-        system("rm ./data/submitted/$id.* 2>/dev/null");
-        system("rm ./data/treex/$id.* 2>/dev/null");
-        system("rm ./data/serialized/$id.* 2>/dev/null");
-
-        system("rm ./servers/tmp/entity/$id.* 2>/dev/null");
-        system("rm -rf ./servers/tmp/nlp/$id/ 2>/dev/null");
-        system("rm ./servers/tmp/export/$id.* 2>/dev/null");
-        system("rm ./servers/tmp/relation/$id.* 2>/dev/null");
-
-        print STDERR "[OK]\tDeleted.\n";
-    }
-
-    exit 0;
+    print STDERR $output;
+    exit $output =~ /ERROR/ ? 1 : 0;
 }
 
-##
-## LIST OF FILES
-##
+## C.1 CONTENT HTML
+## Returns HTML version of document with chunks annotated by <span> tags
+if ($COMMAND eq "content-html") {
+    my $doc_id = shift(@ARGV);
+    my $output = RExtractor::API::c1_content_html($doc_id);
 
-my @list = ();
-
-if ($COMMAND eq "list-submit") {
-    @list = split(/\n/, `grep 200 data/logs/* | cut -f 1 -d ':' | cut -f 3 -d '/' | cut -f 1 -d '.'`);
-    exit 0;
+    binmode(STDOUT, ":encoding(utf8)");
+    print STDOUT $output;
+    exit $output =~ /ERROR/ ? 1 : 0;
 }
 
-if ($COMMAND eq "list-convert") {
-    @list = split(/\n/, `grep 320 data/logs/* | cut -f 1 -d ':' | cut -f 3 -d '/' | cut -f 1 -d '.'`);
+## C.2 CONTENT CHUNKS
+## Return data about specified chunk
+if ($COMMAND eq "content-chunks") {
+    my $doc_id = shift(@ARGV);
+    my $chunk_id = shift(@ARGV);
+    my $output = RExtractor::API::c2_content_chunks($doc_id, $chunk_id);
+
+    binmode(STDOUT, ":encoding(utf8)");
+    print $output;
+    exit $output =~ /ERROR/ ? 1 : 0;
 }
 
-if ($COMMAND eq "list-nlp") {
-    @list = split(/\n/, `grep 420 data/logs/* | cut -f 1 -d ':' | cut -f 3 -d '/' | cut -f 1 -d '.'`);
+## C.3 CONTENT RELATIONS
+## Returns extracted relations
+if ($COMMAND eq "content-relations") {
+    my $doc_id = shift(@ARGV);
+    my $output = RExtractor::API::c3_content_relations($doc_id);
+
+    binmode(STDOUT, ":encoding(utf8)");
+    print $output;
+    exit $output =~ /ERROR/ ? 1 : 0;
 }
 
-if ($COMMAND eq "list-entity") {
-    @list = split(/\n/, `grep 520 data/logs/* | cut -f 1 -d ':' | cut -f 3 -d '/' | cut -f 1 -d '.'`);
+## E LIST OF FILES
+## Returns list of ids of document which were processed by specified component
+if ($COMMAND =~ /^list-(submit|convert|nlp|entity|relation|export)$/) {
+    my $fromDate = shift(@ARGV);
+    my $toDate = shift(@ARGV);
+    my $fromDateTime = shift(@ARGV);
+    my $toDateTime = shift(@ARGV);
+
+    $fromDate = $fromDate eq "NO" ? undef : $fromDate;
+    $toDate = $toDate eq "NO" ? undef : $toDate;
+    $fromDateTime = $fromDateTime eq "NO" ? undef : $fromDateTime;
+    $toDateTime = $toDateTime eq "NO" ? undef : $toDateTime;
+
+    my $output = RExtractor::API::e_list($COMMAND, $fromDate, $toDate, $fromDateTime, $toDateTime);
+    print $output;
+    exit $output =~ /ERROR/ ? 1 : 0;
 }
 
-if ($COMMAND eq "list-relation") {
-    @list = split(/\n/, `grep 620 data/logs/* | cut -f 1 -d ':' | cut -f 3 -d '/' | cut -f 1 -d '.'`);
-}
+## E.7 LIST ALL
+## Returns details about each submitted document
+if ($COMMAND eq "list-all") {
+    my $start = shift(@ARGV);
+    my $limit = shift(@ARGV);
 
-if ($COMMAND eq "list-export") {
-    @list = split(/\n/, `grep 720 data/logs/* | cut -f 1 -d ':' | cut -f 3 -d '/' | cut -f 1 -d '.'`);
-}
-
-my $timestamp = shift(@ARGV);
-if (!defined($timestamp) or $timestamp !~ /^\d+$/) {
-    print join("\n", @list);
-    exit 0;
-}
-
-foreach my $id (@list) {
-    my (
-        $dev,
-        $ino,
-        $mode,
-        $nlink,
-        $uid,
-        $gid,
-        $rdev,
-        $size,
-        $atime,
-        $mtime,
-        $ctime,
-        $blksize,
-        $blocks
-    ) = stat("data/logs/$id.log");
-
-    if ($mtime >= $timestamp) {
-        print "$id\n";
-    }
+    my $output = RExtractor::API::e7_list_all($start, $limit);
+    print $output;
+    exit $output =~ /ERROR/ ? 1 : 0;
 }
