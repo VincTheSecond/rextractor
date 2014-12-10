@@ -10,8 +10,11 @@ var message = "";
 var highlight = "";
 var box = undefined;
 var timeout = undefined;
+
 var list_start = 0;
 var list_limit = 10;
+var list_order_by = "ctime";
+var list_order_dir = "DESC";
 
 // Start with welcome screen
 jQuery('body').ready(function() {
@@ -114,7 +117,7 @@ function applet_list(id_to_highlight, refresh) {
 
     if (!refresh) {
         output += "<div class='box'>";
-        output += "<h2>List of submitted documents</h2>"
+        output += "<h2>List of submitted documents <div class='short-loading'>Loading ...</div></h2>"
         output += "<div class='loading'></div>";
         output += "<div class='message'>" + message + "</div>";
         output += "<div class='data'></div>";
@@ -128,14 +131,47 @@ function applet_list(id_to_highlight, refresh) {
     }
 
     jQuery.ajax({
-        url: "./index.cgi?command=list-all&start=" + list_start + "&limit=" + list_limit,
+        url: "./index.cgi?command=list-all&start=" + list_start + "&limit=" + list_limit + "&order_by=" + list_order_by + "&order_dir=" + list_order_dir,
         success: function(data) {
             var jobs = data.split('\n');
+
+            // Sorting icon
+            var sorting = ["", "", ""];
+
+            var sorting_data = jobs[1].split("\t");
+            if (sorting_data[3] == "id") {
+                if (sorting_data[4] == "DESC") {
+                    sorting[0] = "<img src='images/sort-desc.png'>";
+                }
+                else {
+                    sorting[0] = "<img src='images/sort-asc.png'>";
+                }
+            }
+            if (sorting_data[3] == "ctime") {
+                if (sorting_data[4] == "DESC") {
+                    sorting[1] = "<img src='images/sort-desc.png'>";
+                }
+                else {
+                    sorting[1] = "<img src='images/sort-asc.png'>";
+                }
+            }
+            if (sorting_data[3] == "status") {
+                if (sorting_data[4] == "DESC") {
+                    sorting[2] = "<img src='images/sort-desc.png'>";
+                }
+                else {
+                    sorting[2] = "<img src='images/sort-asc.png'>";
+                }
+            }
 
             // Format HTML output
             var output = "";
             output += "<table class='list'>";
-            output += "<tr><th>Document</th><th>Submition time</th><th colspan=3>State</th></tr>";
+            output += "<tr>";
+            output += "<th colspan=1><a href='javascript:list_sort(\"id\")'    > Document</a>       " + sorting[0] + "</th>";
+            output += "<th colspan=1><a href='javascript:list_sort(\"ctime\")' > Submition time</a> " + sorting[1] + "</th>";
+            output += "<th colspan=3><a href='javascript:list_sort(\"status\")'> State</a>          " + sorting[2] + "</th>";
+            output += "</tr>";
             for (var i = 2; i < jobs.length; i++) {
                 if (!jobs[i].match(/./)) {
                     continue;
@@ -200,12 +236,14 @@ function applet_list(id_to_highlight, refresh) {
                 box.find('.data').html(output);
             }
 
-            box.find('.data').find('tr').each(function() {
+            box.find('.data').find('tr:not(:first)').each(function() {
                 jQuery(this).click(function() {
                     var id = jQuery(this).attr('id').replace(/document_/, "");
                     run_document(id);
                 })
             })
+
+            jQuery('.short-loading').hide();
         },
         error: function() {
             jQuery('#applet_server_status').html("<p>Couldn't retrieve server status</p>");
@@ -216,13 +254,34 @@ function applet_list(id_to_highlight, refresh) {
 }
 
 function list_previous() {
+    jQuery('.short-loading').show();
     list_start -= 10;
     list_start = list_start < 0 ? 0 : list_start;
     applet_list("", 1);
 }
 
 function list_next() {
+    jQuery('.short-loading').show();
     list_start += 10;
+    applet_list("", 1);
+}
+
+function list_sort(order_by, order_dir) {
+    jQuery('.short-loading').show();
+    list_start = 0;
+    if (order_by == list_order_by) {
+        if (list_order_dir == "DESC") {
+            list_order_dir = "ASC";
+        }
+        else {
+            list_order_dir = "DESC";
+        }
+    }
+    else {
+        list_order_by = order_by;
+        list_order_dir = "ASC";
+    }
+
     applet_list("", 1);
 }
 

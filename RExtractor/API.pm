@@ -4,6 +4,10 @@ use strict;
 use warnings;
 use Date::Parse;
 
+use RExtractor::Relations::DBR;
+use RExtractor::Entities::DBE;
+use RExtractor::Presentation::INTLIB;
+
 package RExtractor::API;
 
 ## A.1 SERVER START
@@ -219,7 +223,7 @@ sub c2_content_chunks {
     }
 
     # Print data
-    my $output = "";
+    my $output = "[OK]\n";
     my @entity_ids = keys %{$Document->{chunk2entity}{$chunk_id}};
     foreach my $entity_id (@entity_ids) {
         my @entities = $Document->{description}->findnodes("//entity[\@entity_id = '$entity_id']");
@@ -267,7 +271,7 @@ sub c3_content_relations {
     }
 
     #Return HTML presentation of the document
-    return $Document->getRelations($DBR);
+    return "[OK]\n" . $Document->getRelations($DBR);
 }
 
 ## D.1 EXPORT DOCUMENT
@@ -408,7 +412,7 @@ sub e_list {
 ## E.7 LIST ALL
 ## Returns details about each submitted document
 sub e7_list_all {
-    my ($start, $limit) = @_;
+    my ($start, $limit, $order_by, $order_dir) = @_;
 
     # Check params
     if ($start !~ /^\d+$/) {
@@ -419,20 +423,37 @@ sub e7_list_all {
         return "[ERROR]\nIncorrent limit parameter.\n";
     }
 
+    if ($order_by !~ /^(id|ctime|status)$/) {
+        $order_by = "ctime";
+    }
+
+    if ($order_dir !~ /^(ASC|DESC)$/) {
+        $order_dir = "desc";
+    }
+
     my @list = split(/\n/, `grep 200 data/logs/* | cut -f 1 -d ':' | cut -f 3 -d '/' | cut -f 1 -d '.'`);
     my %data = ();
     foreach my $id (@list) {
         my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size, $atime, $mtime, $ctime, $blksize, $blocks) = stat("data/submitted/$id.html");
         my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime($mtime);
+        my $status = RExtractor::Tools::getDocumentStatus($id);
         $data{$id}{ctime} = $mtime;
-        $data{$id}{data} = "$id\t" . ($year + 1900) . "-" . sprintf("%02d", ($mon + 1)) . "-" . sprintf("%02d", $mday) . " " . sprintf("%02d", $hour) . ":" . sprintf("%02d", $min) . ":" . sprintf("%02d", $sec) . "\t" . RExtractor::Tools::getDocumentStatus($id) . "\n";
+        $data{$id}{id} = $id;
+        $data{$id}{status} = $status;
+        $data{$id}{data} = "$id\t" . ($year + 1900) . "-" . sprintf("%02d", ($mon + 1)) . "-" . sprintf("%02d", $mday) . " " . sprintf("%02d", $hour) . ":" . sprintf("%02d", $min) . ":" . sprintf("%02d", $sec) . "\t$status\n";
     }
 
     # Sort
+    my @sorted_ids = ();
+    @sorted_ids = sort {$data{$a}{$order_by} <=> $data{$b}{$order_by}} keys %data if ($order_by =~ /^(ctime)$/);
+    @sorted_ids = sort {$data{$a}{$order_by} cmp $data{$b}{$order_by}} keys %data if ($order_by =~ /^(id|status)$/);
+    @sorted_ids = reverse @sorted_ids if ($order_dir eq "DESC");
+
+    # Print    
     my $i = 0;
     my $output = "[OK]\n";
-    $output .= join("\t", (scalar(keys %data), $start, $limit)) . "\n";
-    foreach my $id (reverse sort {$data{$a}{ctime} <=> $data{$b}{ctime}} keys %data) {
+    $output .= join("\t", (scalar(keys %data), $start, $limit, $order_by, $order_dir)) . "\n";
+    foreach my $id (@sorted_ids) {
         $i++;
 
         if ($i < $start or $i >= $start + $limit) {

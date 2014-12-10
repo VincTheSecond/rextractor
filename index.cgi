@@ -164,8 +164,10 @@ if ($COMMAND eq "list-all") {
     # Load params
     my $start = $Source->url_param("start") ? $Source->url_param("start") : 0;
     my $limit = $Source->url_param("limit") ? $Source->url_param("limit") : 10;
+    my $order_by = $Source->url_param("order_by") ? $Source->url_param("order_by") : "ctime";
+    my $order_dir = $Source->url_param("order_dir") ? $Source->url_param("order_dir") : "DESC";
 
-    print RExtractor::API::e7_list_all($start, $limit);
+    print RExtractor::API::e7_list_all($start, $limit, $order_by, $order_dir);
     exit 0;
 }
 

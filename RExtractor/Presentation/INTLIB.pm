@@ -79,6 +79,7 @@ sub load {
 # Return data about relations
 sub getRelations {
     my ($self, $DBR) = @_;
+    my $output = "";
 
     my $previous_dbr_id = 0;
     my @relations = $self->{description}->findnodes("//relation");
@@ -86,8 +87,8 @@ sub getRelations {
         my $dbr_id = $relation->getAttribute("dbr_id");
 
         if ($dbr_id != $previous_dbr_id) {
-            print "<h4>Relation #$dbr_id</h4>\n";
-            print "<i>$DBR->{queries}{$dbr_id}{description}</i>\n";
+            $output .= "<h4>Relation #$dbr_id</h4>\n";
+            $output .= "<i>$DBR->{queries}{$dbr_id}{description}</i>\n";
             $previous_dbr_id = $dbr_id;
         }
 
@@ -112,8 +113,8 @@ sub getRelations {
         foreach my $subject_id (@subject_ids) {
             foreach my $predicate_id (@predicate_ids) {
                 foreach my $object_id (@object_ids) {
-                    print join("\t", (
-                       defined($dbr_id) ? $dbr_id : "",
+                    $output .= join("\t", (
+                        defined($dbr_id) ? $dbr_id : "",
                         defined($subject_id) ? $subject_id : "",
                         defined($subject_concept) ? $subject_concept : "",
                         defined($self->{entity2text}{$subject_id}) ? $self->{entity2text}{$subject_id} : "",
@@ -124,11 +125,13 @@ sub getRelations {
                         defined($object_concept) ? $object_concept : "",
                         defined($self->{entity2text}{$object_id}) ? $self->{entity2text}{$object_id} : ""
                     ));
-                    print "\n";
+                    $output .= "\n";
                 }
             }
         }
     }
+
+    return $output;
 }
 
 # HTML presentation...
