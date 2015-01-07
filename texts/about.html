@@ -1,39 +1,55 @@
 <h2>Learn more about RExtractor</h2>
 
-<p>RExtractor is a system that extracts a knowledge base from raw unstructured texts that is designed as a set of entities and their relations and represented in an ontological framework. The extraction pipeline processes input texts by linguistically-aware tools and extracts entities and relations from their syntactic representation. Consequently, the extracted data is represented according to the Linked Data principles. The system is designed both domain and language independent and provides users with data for more intelligent search than full-text search.</p>
+<p>RExtractor is a system that extracts a knowledge base from raw unstructured texts. The base is designed as a set of entities and their relations and is represented in an ontological framework.
 
-<h3>Extraction strategy</h3>
+<p>The extraction pipeline processes input texts by linguistically-aware tools and extracts entities and relations from their syntactic representation. Consequently, the extracted data is represented according to the Linked Data principles. The system is designed both domain and language independent and provides users with data for more intelligent search than full-text search.
 
-<p>RExtractor consists of four compoments:</p>
+<p>RExtractor consists of four compoments:
+
 <center><img src="images/pipeline.svg" width=700></center>
 
-<h4>Conversion</h4>
+<ol>
+    <li>
+        <b>Conversion</b>
+        -- a largely <i>technical component</i> converting various input formats into an internal representation.<br><br></li>
 
-<p>A largely technical component converting various input formats into internal representation.</p>
+    <li>
+        <b>Natural Language Processing</b>
+        -- a <i>linguistic component</i> providing various analyses of input texts, namely sentence segmentation, tokenization, morphological analysis, part-of-speech tagging, and syntactic parsing. <br><br>
+        Currently employed procedures come from <a href="http://ufal.mff.cuni.cz/treex">Treex</a>, a highly modular NLP software system. The NLP component outputs a dependency tree for each sentence in the input texts. For illustration, assume the sentence <em>(3) Accounting units, which keep books in simplified extent, create fixed items and reserves according to special legal regulations</em> and its dependency tree (for more details on dependency trees, see <a href="http://ufal.mff.cuni.cz/pdt2.0/doc/pdt-guide/en/html/ch02.html">PDT guidelines</a>, Section 2.1 and 2.2):
+        <br><br><br>
+        <center><img src="images/tree.svg"></center>
+        <br><br>
+    </li>
+    
+    <li>
+        <b>Entity Detection</b>
+        -- an <i>extraction component</i> querying the dependency trees to detect entities stored in Database of Entities (DBE). It exploits the <a href="http://ufal.mff.cuni.cz/pmltq/">PML-TQ</a> tool. DBE is built manually by domain experts.
+        <br><br>
+        We detect the entity <em>current tangible assets</em> in the tree on the left using the PML-TQ query on the right:
+        <br><br><br>
+        <center><img src="images/entities_detection.svg"></center>
+        <br><br>
+        The figure below presents entities from DBE detected in the sample sentence:
+        <br><br><br>
+        <center><img src="images/entities_czen.svg"></center>
+        <br><br>
+    </li>
 
-<h4>Natural Language Processing</h4>
+    <li>
+        <b>Relation Extraction</b>
+        -- an <i>extraction component</i> querying the dependency trees with recognized entities to detect relations between them. It exploits the PML-TQ tool as well and poses queries stored in Database of Queries (DBQ). DBQ is built manually by both domain and PML-TQ experts.
+        <br><br>
+        For illustration, assume the tree above and a query on the figure below:
+        <br><br><br>
+        <center><img src="images/query.svg"></center>
+        <br><br>
+    </li>
+</ol>
 
-<p>A linguistic component providing various analyses of input texts, namely sentence segmentation, tokenization, morphological analysis, part-of-speech tagging, and syntactic parsing. Currently employed procedures fit the framework originally formulated in the <a href="http://ufal.mff.cuni.cz/pdt3.0/">Prague Dependency Treebank</a> (PDT).</p>
+<p>To sum up, processing the sentence <em>(3) Accounting units, which keep books in simplified extent, create fixed items and reserves according to special legal regulations</em>, RExtractor builds a knowledge base consisting of three entities (<i>accounting unit</i>, <i>fixed item</i>, <i>reserve</i>) and the <i>sth/sb has to create sth</i> relation :
 
-<p>The dependency approach to syntactic parsing with the main role of verb is applied and it results in a dependency tree where each token in the sentence has one corresponding node and dependencies are assigned with the syntactic dependency relation. For illustration, assume the sentence <em>(3) Accounting units, which keep books in simplified extent, create fixed items and reserves according to special legal regulations</em>. Its dependency tree is displayed in following Figure:
-<center><img src="images/tree.svg"></center></p>
-
-<h4>Entity Detection</h4>
-
-<p>An extraction component querying dependency trees to detect entities stored in Database of Entities (DBE) in texts and it exploits the <a href="http://ufal.mff.cuni.cz/pmltq/">PML-TQ tool</a>. DBE is built by domain experts. We prefer querying dependency trees to matching texts with regular expressions because it allows us to detect entities with more complex structures, like coordinations. Figure displays the dependency tree of coordination <em>current tangible and intangible assets</em>. Using the PML-TQ query displayed in the Figure, we detect the entity <em>current tangible assets</em> in the tree.
-<center><img src="images/entities_detection.svg"></center></p>
-
-<p>Figure below presents entities detected in the sentence <em>(3) Accounting units, which keep books in simplified extent, create fixed items and reserves according to special legal regulations</em>:
-<center><img src="images/entities.svg"></center></p>
-
-<h4>Relation Extraction</h4>
-
-<p>An extraction component querying dependency trees with highlighted entities to detect relations between them. It exploits the PML-TQ tool as well and poses queries stored in Database of Queries (DBQ). DBS is built by both domain and PML-TQ experts.</p>
-
-<p>For illustration, assume the sentence <em>(3) Accounting units, which keep books in simplified extent, create fixed items and reserves according to special legal regulations</em>, its dependency tree and the query displayed in Figure:
-<center><img src="images/entities.svg"></center></p>
-
-<p>Table below lists data extracted from the given tree by the given query:
+<!-- by REaxtractorTable below lists data extracted from the given tree by the given query-->
 <center>
 <table class='list'>
     <tr>
@@ -48,17 +64,19 @@
     </tr>
     <tr>
         <td>Accounting units</td>
-        <td>crate</td>
+        <td>create</td>
         <td>fixed items</td>
     </tr>
     <tr>
         <td>Accounting units</td>
-        <td>crate</td>
+        <td>create</td>
         <td>reserves</td>
     </tr>
 </table>
 </center>
 </p>
+
+
 
 <h2>References</h2>
 

@@ -140,7 +140,7 @@ sub getFooter {
 
     my $output = "";
     $output .= "<div id='footer'>";
-    $output .= "<p>&copy; 2014 Vincent Kríž</p>";
+    $output .= "<p>&copy; 2015 Vincent Kríž</p>";
     $output .= "</div>";
 
     return $output;

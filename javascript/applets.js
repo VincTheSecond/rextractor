@@ -224,6 +224,9 @@ function applet_list(id_to_highlight, refresh) {
                 output += "<a href='javascript:list_previous()'>Show previous jobs</a>";
             }
             if (list_start + list_limit < pagging[0]) {
+                if (output.match(/Show previous jobs/)) {
+                    output += " | ";
+                }
                 output += "<a href='javascript:list_next()'>Show next jobs</a>";
             }
 
