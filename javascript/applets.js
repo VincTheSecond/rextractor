@@ -6,6 +6,8 @@
 // Global variabiles
 var id = "";
 var content = "";
+var strategy = "";
+
 var message = "";
 var highlight = "";
 var box = undefined;
@@ -15,6 +17,14 @@ var list_start = 0;
 var list_limit = 10;
 var list_order_by = "ctime";
 var list_order_dir = "DESC";
+
+// FIXME:
+// Map strategy ID to pretty name. This should be fix with
+// dynamic loading of available strategies.
+var strategies = {
+    'intlib_en': 'English legal text',
+    'intlib_cz': 'Czech legal text'
+};
 
 // Start with welcome screen
 jQuery('body').ready(function() {
@@ -294,11 +304,17 @@ function applet_submit() {
 
     // Form
     var form = "";
+    form += "<p>Select extraction strategy:</p>";
+    form += "<select id='new_submit_strategy'>";
+    for (strategy_id in strategies) {
+        form += "<option value='" + strategy_id + "'>" + strategies[strategy_id] + "</option>";
+    }
+    form += "</select>";
     form += "<p>Job identification:</p>";
     form += "<input type='text' id='new_submit_id' value='" + id + "'>";
     form += "<p>Input unstructured text:</p>";
     form += "<textarea id='new_submit_content'>" + content + "</textarea><br>";
-    form += "<input type='button' value='Submit new job!' onClick='applet_submit_click()'>";
+    form += "<input id='new_submit_submit' type='button' value='Submit new job!' onClick='applet_submit_click()'>";
 
     var output = "";
     output += "<div class='box'>";
@@ -327,18 +343,27 @@ function applet_submit_click() {
     // Read data
     id = jQuery('#new_submit_id').val();
     content = jQuery('#new_submit_content').val();
+    strategy = jQuery('#new_submit_strategy').val();
 
     // Check data
     if (!id.match(/^\w+$/)) {
         message = "<p class='error'>Incorrect job identifier.";
         run_submit();
+        return;
     }
 
-    if (!content.match(/^\w+$/)) {
+    if (!content.match(/\w+/)) {
         message = "<p class='error'>Incorrect content. Please, insert an unstructured text.</p>";
         run_submit();
+        return;
     }
 
+    if (!strategy.match(/^\w+$/)) {
+        message = "<p class='error'>Incorrect extraction strategy. Please, select one from the menu.</p>";
+        run_submit();
+        return;
+    }
+    
     // If there is no HTML tags, put <p> tags around the text
     if (!content.match(/^<p>/)) {
         content = "<p>" + content + "</p>";
@@ -349,7 +374,8 @@ function applet_submit_click() {
         url: "./index.cgi?command=document-submit",
         data: {
           doc_id: id,
-          doc_content: content
+          doc_content: content,
+          doc_strategy: strategy
         },
         success: function(data) {
             if (data.match(/OK/)) {
@@ -365,6 +391,7 @@ function applet_submit_click() {
             alert("Chyba");
         }
     });
+    alert("Strategy = " + strategy)
 }
 
 function applet_document(id) {
@@ -566,6 +593,10 @@ function get_document_state(id, box) {
             var color = state.match(/\d10/) ? "red" : "green";
             var progress_bar = "<div class='state-bar'><div class='state-bar-content' style='width: " + percent + "%; background: " + color + "'></div></div>";
 
+            var doc_strategy = lines[3];
+            doc_strategy = doc_strategy.replace(/.*:\s+/, "");
+            doc_strategy = strategies[doc_strategy];
+
             var output = "";
             output += "<h3>Current status</h3>";
             output += "<table><tr><td><img src='" + icon + "'></td><td>" + text + "</td></tr></table>";
@@ -573,8 +604,8 @@ function get_document_state(id, box) {
             output += progress_bar;
             output += "<h3>Details</h3>";
             output += "<table class='list'>";
-            output += "<tr><th>Document</th><th>Submition time</th><th>State</th><th>Actions</th></tr>";
-            output += "<tr><td>" + id + "</td><td>" + submition_time + "</td><td>" + state + "</td><td><span class='delete'>Delete document</span></td></tr>";
+            output += "<tr><th>Document</th><th>Submition time</th><th>State</th><th>Strategy</th><th>Actions</th></tr>";
+            output += "<tr><td>" + id + "</td><td>" + submition_time + "</td><td>" + state + "</td><td>" + doc_strategy + "</td><td><span class='delete'>Delete document</span></td></tr>";
             output += "</table>";
 
             box.find(".state").html(output);

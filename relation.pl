@@ -6,9 +6,9 @@ use POSIX;
 
 use RExtractor::Tools;
 use RExtractor::Document;
-#use RExtractor::Entities::DBE;
+use RExtractor::Strategy;
+use RExtractor::Relations;
 use RExtractor::Relations::DBR;
-use RExtractor::Relations::Annotation;
 
 $SIG{INT}  = \&_signalHandler;
 $SIG{KILL} = \&_signalHandler;
@@ -33,33 +33,6 @@ if (!RExtractor::Tools::writeFile("./servers/pids/relation.pid", $$)) {
     exit(1);
 }
 
-# Load DBE
-my $scenario = "./database/relations.scen";
-if (not (-f $scenario)) {
-    RExtractor::Tools::error($LOG, "Couldn't load relation detection scenario. Terminating...");
-    exit(1);
-}
-
-##
-## Load DBR
-## 
-my $DBR_XML_FILE = "./database/relations.xml";
-if (not (-f $DBR_XML_FILE)) {
-    RExtractor::Tools::error($LOG, "Couldn't find Database of Relations (DBR). Terminating...");
-    exit(1);
-}
-
-my $DBR = new RExtractor::Relations::DBR();
-if (!$DBR->load($DBR_XML_FILE)) {
-    RExtractor::Tools::error($LOG, "Couldn't load Database of Relations (DBR). Terminating...");
-    exit(1);
-}
-
-if (!$DBR->parseQueries()) {
-    RExtractor::Tools::error($LOG, "Couldn't parse queries in the Database of Relations (DBR). Terminating...");
-    exit(1);
-}
-
 RExtractor::Tools::info($LOG, "Relation server ($$) started.");
 
 # Process document
@@ -76,38 +49,47 @@ while (42) {
 
     RExtractor::Tools::info($LOG, "Relation detection for document $document->{id} started.");
 
-    ##
-    ## Run treex
-    ##
+    # Obtain strategy id
+    my $strategy_id = RExtractor::Tools::getDocumentStrategy($document->{id});
 
-    my $output_file = "./servers/tmp/relation/$document->{id}.csv";
-    my $treex_return_value = system("
-        export TMT_ROOT=/data/intlib/treex/;
-        export TRED_DIR=\"/data/intlib/tred\";
-        export TRED_DEPENDENCIES=\"/data/intlib/tred/dependencies\";
-        PATH=\"\${TRED_DEPENDENCIES}/bin:\${PATH}\";
-        export PERL5LIB=\"\${TRED_DEPENDENCIES}/lib/perl5\${PERL5LIB:+:\$PERL5LIB}\";
-        export LD_LIBRARY_PATH=\"\${TRED_DEPENDENCIES}/lib:\${LD_LIBRARY_PATH}\";
-        treex $scenario Write::Treex clobber=1 -- $document->{filename} >$output_file"
-    );
-    if ($treex_return_value) {
-        # Delete tmp files
-        system("rm -rf ./servers/tmp/relation/$document->{id}.csv");
-        RExtractor::Tools::error($LOG, "Error occured while relation detection process in the document ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Error occured during relation detection in treex.");
+    # Load strategy
+    my $Strategy = new RExtractor::Strategy();
+    if (!$Strategy->loadFile("./strategies/$strategy_id.xml")) {
+        RExtractor::Tools::error($LOG, "Couldn't load strategy from './strategies/$strategy_id.xml'.");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Couldn't load strategy.");
         RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
         next;
     }
 
-    ##
-    ## Process output file with entities
-    ##
+    # Check, if Strategy configuration contains all needed attributes
+    if (!$Strategy->check("entity")) {
+        RExtractor::Tools::error($LOG, "Strategy is incorrect or incomplete. ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Couldn't load strategy.");
+        RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
+        next;
+    }
+
+    RExtractor::Tools::info($LOG, "Applying entity detection strategy '$strategy_id'.");
+
+    # Load DBR
+    my $DBR = new RExtractor::Relations::DBR();
+    if (!$DBR->load($Strategy->{relation}{dbr_file})) {
+        RExtractor::Tools::error($LOG, "Couldn't load DBR from file '$Strategy->{relation}{dbr_file}'. Terminating...");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Couldn't load DBR.");
+        RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
+        next;
+    }
+
+    if (!$DBR->parseQueries()) {
+        RExtractor::Tools::error($LOG, "Couldn't parse queries in the DBR '$Strategy->{relation}{dbr_file}'. Terminating...");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Couldn't parse DBR.");
+        RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
+        next;
+    }
 
     # Open document
     my $Document = new RExtractor::Document();
-    print STDERR "File: ./data/converted/$document->{id}.xml\n";
     if (!$Document->load("./data/converted/$document->{id}.xml")) {
-        # Delete tmp files
         system("rm -rf ./servers/tmp/relation/$document->{id}.csv");
         RExtractor::Tools::error($LOG, "Couldn't load XML document ($document->{id}).");
         RExtractor::Tools::setDocumentStatus($document->{id}, "610 Error occured during loading XML document.");
@@ -117,7 +99,6 @@ while (42) {
 
     # Parse existing entities in the Document
     if (!$Document->parseChunks() or !$Document->parseEntities()) {
-        # Delete tmp files
         system("rm -rf ./servers/tmp/relation/$document->{id}.csv");
         RExtractor::Tools::error($LOG, "Couldn't parse entities XML document ($document->{id}).");
         RExtractor::Tools::setDocumentStatus($document->{id}, "610 Error occured during pasring entities in XML document.");
@@ -136,23 +117,13 @@ while (42) {
         next;
     }
 
-    # Annotate relations into Document
-    my $Annotate = new RExtractor::Relations::Annotation();
-
-    if (!$Annotate->load($output_file)) {
-        # Delete tmp files
+    # Process
+    eval("use $Strategy->{relation}{package}");
+    my $Relation = eval("new $Strategy->{relation}{package}");
+    if (!$Relation->process($Strategy, $Document, $Serialized, $DBR)) {
         system("rm -rf ./servers/tmp/relation/$document->{id}.csv");
-        RExtractor::Tools::error($LOG, "Couldn't load PMLTQ results from file '$output_file' ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Error occured during parsing PMLTQ results for document.");
-        RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
-        next;
-    }
-
-    if (!$Annotate->annotate($DBR, $Document, $Serialized)) {
-        # Delete tmp files
-        system("rm -rf ./servers/tmp/relation/$document->{id}.csv");
-        RExtractor::Tools::error($LOG, "Couldn't save relations annotations in document ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Error occured during annotating relations in document.");
+        RExtractor::Tools::error($LOG, "Error occured while relation detection process in the document ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "610 Error occured during relation detection in treex.");
         RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
         next;
     }

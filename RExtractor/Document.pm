@@ -33,7 +33,7 @@ sub load {
 
     # Document ID
     my $id = $filename;
-    $id =~ s/^(?:.*\/)?([^\/]+)$/$1/;
+    $id =~ s/(?:.*\/)?([^\/]+)\.xml/$1/;
     $self->{id} = $id;
 
     # Remember or create chunk node in description section

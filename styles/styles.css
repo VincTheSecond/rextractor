@@ -249,7 +249,24 @@ textarea {
 
 input {
     border: 1px solid black;
+    border-radius: 5px;
     padding: 5px;
+}
+
+.ui-selectmenu-button span.ui-selectmenu-text {
+    padding: 0px;
+}
+
+.ui-menu-item,
+.ui-selectmenu-button,
+select {
+    font-weight: normal;
+    font-size: 10pt;
+    padding: 5px;
+}
+
+#new_submit_strategy {
+    width: 200px;
 }
 
 /**

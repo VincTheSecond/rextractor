@@ -62,7 +62,8 @@ if ($COMMAND eq "document-submit") {
     # Load params
     my $doc_id = $Source->param("doc_id");
     my $doc_content = $Source->param("doc_content");
-    print RExtractor::API::b2_document_submit($doc_id, $doc_content, undef);
+    my $doc_strategy = $Source->param("doc_strategy");
+    print RExtractor::API::b2_document_submit($doc_strategy, $doc_id, $doc_content, undef);
 
     exit 0;
 }

@@ -16,6 +16,22 @@ sub new {
     return $self;
 }
 
+sub process {
+    my ($self, $Document, $Serialized) = @_;
+
+    if (!$self->load("./data/submitted/$Document->{id}.html")) {
+        return 0;
+    }
+
+    if (!$self->export($Document, $Serialized)) {
+        return 0;
+    }
+
+    $self->save("./data/exported/$Document->{id}.html");
+    $self->saveDescription($Document, $Serialized, "./data/exported/$Document->{id}.xml");
+    return 1;
+}
+
 sub load {
     my ($self, $filename) = @_;
 

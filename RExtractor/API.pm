@@ -72,7 +72,10 @@ sub b1_document_state {
     # Print submition time
     my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size, $atime, $mtime, $ctime, $blksize, $blocks) = stat("./data/submitted/$doc_id.html");
     my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime($mtime);
-    $output .= "" . ($year + 1900) . "-" . sprintf("%02d", ($mon + 1)) . "-" . sprintf("%02d", $mday) . " " . sprintf("%02d", $hour) . ":" . sprintf("%02d", $min) . ":" . sprintf("%02d", $sec) . "\n";
+    $output .= "Submition time: " . ($year + 1900) . "-" . sprintf("%02d", ($mon + 1)) . "-" . sprintf("%02d", $mday) . " " . sprintf("%02d", $hour) . ":" . sprintf("%02d", $min) . ":" . sprintf("%02d", $sec) . "\n";
+
+    # Print extraction strategy
+    $output .= "Extraction strategy: " . RExtractor::Tools::getDocumentStrategy($doc_id) . "\n";
     return $output;
 }
 
@@ -80,7 +83,12 @@ sub b1_document_state {
 ## Name of the document is in POST-variable doc_id
 ## Content of the document is in POST-variable doc_content
 sub b2_document_submit {
-    my ($doc_id, $doc_content, $filename) = @_;
+    my ($doc_strategy, $doc_id, $doc_content, $filename) = @_;
+
+    # Check doc_strategy
+    if ($doc_strategy !~ /^\w+$/ or not(-r "./strategies/$doc_strategy.xml")) {
+        return "[ERROR]\nInvalid extraction strategy.\n"
+    }
 
     # Variant A
     # Content of the document is given in $doc_content
@@ -125,6 +133,9 @@ sub b2_document_submit {
     }
 
     # Create log file, set status to 200 - Submited correctly.
+    if (!RExtractor::Tools::setDocumentStatus($doc_id, "100 Submited strategy: $doc_strategy.")) {
+        return "[ERROR]\nError occured while creating log file '/data/logs/$doc_id.log'\n";
+    }
     if (!RExtractor::Tools::setDocumentStatus($doc_id, "200 Submited correctly.")) {
         return "[ERROR]\nError occured while creating log file '/data/logs/$doc_id.log'\n";
     }
