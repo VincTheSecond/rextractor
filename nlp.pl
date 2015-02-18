@@ -6,6 +6,7 @@ use POSIX;
 
 use RExtractor::Tools;
 use RExtractor::Document;
+use RExtractor::Strategy;
 
 $SIG{INT}  = \&_signalHandler;
 $SIG{KILL} = \&_signalHandler;
@@ -46,94 +47,41 @@ while (42) {
 
     RExtractor::Tools::info($LOG, "NLP processing of the document $document->{id} started.");
 
-    ## Load file
-    my $Document = new RExtractor::Document();
-    $Document->load($document->{filename});
+    # Obtain strategy id
+    my $strategy_id = RExtractor::Tools::getDocumentStrategy($document->{id});
 
-    ## Create temporary dir structure
-    print STDERR "Creating temporary dirs...\n";
-    system("mkdir ./servers/tmp/nlp/$document->{id}");
-    system("mkdir ./servers/tmp/nlp/$document->{id}/txt");
-    system("mkdir ./servers/tmp/nlp/$document->{id}/segmented");
-    
-    ## Create input files for Treex
-    print STDERR "Creating txt files...\n";
-    my @texts = $Document->{xml}->findnodes("/document/body/text");
-    foreach my $textnode (@texts) {
-        my $id = $textnode->getAttribute("id");
-        my $text = $textnode->to_literal();
-
-        open(FILE, ">./servers/tmp/nlp/$document->{id}/txt/$document->{id}" . "_" . sprintf("%04d", $id) . ".txt");
-        binmode(FILE, ":encoding(utf-8)");
-        print FILE $text;
-        close(FILE);
-    }
-
-    ## Run Treex segmentation
-    print STDERR "Run segmentation...\n";
-    my $tree1_return_value = system("export TMT_ROOT=/data/intlib/treex/; treex Util::SetGlobal language=cs Read::Text from='!./servers/tmp/nlp/$document->{id}/txt/*.txt' W2A::CS::Segment Write::Treex compress=0");
-    if ($tree1_return_value) {
-        # Delete tmp files
-        system("rm -rf ./servers/tmp/nlp/$document->{id}");
-        RExtractor::Tools::error($LOG, "Error occured while treex processing of the document ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "410 Error occured during document processing in treex.");
+    # Load strategy
+    my $Strategy = new RExtractor::Strategy();
+    if (!$Strategy->loadFile("./strategies/$strategy_id.xml")) {
+        RExtractor::Tools::error($LOG, "Couldn't load strategy from './strategies/$strategy_id.xml'.");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "410 Couldn't load strategy.");
         RExtractor::Tools::deleteFile("./data/converted/$document->{id}.lock");
         next;
     }
 
-    ## Read data from treex files
-    my @LMs = ();
-    print STDERR "Merge treex files...\n";
-    foreach my $file (split(/\n/, `find ./servers/tmp/nlp/$document->{id}/txt/ -name '*.treex' | sort`)) {
-        my $subid = $file;
-        $subid =~ s/^.*_(\d+)\.treex$/$1/;
-
-        my $lm_section = 0;
-        my $data = "";
-        open(FILE, "<$file");
-        while (<FILE>) {
-            chomp($_);
-            if ($_ =~ /<LM id="/) {
-                $_ =~ s/id="(.*)"/id="$subid-$1"/;
-                $lm_section = 1;
-            }
-
-            if ($lm_section) {
-                $data .= "$_\n";
-            }
-
-            if ($_ =~ /<\/LM>/) {
-                $lm_section = 0;
-            }
-        }
-        close(FILE);
-
-        push(@LMs, $data);
+    # Check, if Strategy configuration contains all needed attributes
+    if (!$Strategy->check("nlp")) {
+        RExtractor::Tools::error($LOG, "Strategy is incorrect or incomplete. ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "410 Couldn't load strategy.");
+        RExtractor::Tools::deleteFile("./data/converted/$document->{id}.lock");
+        next;
     }
 
-    ## Merge treex files into one
-    my $treex_file = "./servers/tmp/nlp/$document->{id}/segmented/$document->{id}.treex";
-    open(OUTPUT, ">$treex_file");
-    print OUTPUT "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<treex_document xmlns=\"http://ufal.mff.cuni.cz/pdt/pml/\">
-  <head>
-    <schema href=\"treex_schema.xml\" />
-  </head>
-  <bundles>\n";
-    print OUTPUT join("\n", @LMs) . "\n";
-    print OUTPUT "  </bundles>
-</treex_document>
-    ";
-    close(OUTPUT);
+    RExtractor::Tools::info($LOG, "Applying conversion strategy '$strategy_id'.");
 
-    ## Run morphlogy and other stuff over merded file
-    print STDERR "Run treex...\n";
-    my $treex_output_file = "./data/treex/$document->{id}.treex.gz";
-    my $csv_output_file = "./data/serialized/$document->{id}.csv";
+    ## Load file
+    my $Document = new RExtractor::Document();
+    if (!$Document->load($document->{filename})) {
+        system("rm -rf ./servers/tmp/nlp/$document->{id}");
+        RExtractor::Tools::error($LOG, "Couldn't load document ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "410 Error occured during loading document.");
+        RExtractor::Tools::deleteFile("./data/converted/$document->{id}.lock");
+        next;
+    }
 
-    my $tree2_return_value = system("export TMT_ROOT=/data/intlib/treex/; treex W2A::CS::Tokenize W2A::CS::TagFeaturama lemmatize=1 W2A::CS::FixMorphoErrors INTLIB::Retokenize W2A::CS::ParseMSTAdapted W2A::CS::FixAtreeAfterMcD W2A::CS::FixIsMember W2A::CS::FixPrepositionalCase W2A::CS::FixReflexiveTantum W2A::CS::FixReflexivePronouns INTLIB::Serialize to=$csv_output_file Write::Treex to=$treex_output_file -- $treex_file 2>/tmp/treex.log");
-    if ($tree2_return_value) {
-        # Delete tmp files
+    eval("use $Strategy->{nlp}{package}");
+    my $NLP = eval("new $Strategy->{nlp}{package}");
+    if (!$NLP->process($Strategy, $Document)) {
         system("rm -rf ./servers/tmp/nlp/$document->{id}");
         RExtractor::Tools::error($LOG, "Error occured while treex processing of the document ($document->{id}).");
         RExtractor::Tools::error($LOG, `cat /tmp/treex.log`);
@@ -141,7 +89,7 @@ while (42) {
         RExtractor::Tools::deleteFile("./data/converted/$document->{id}.lock");
         next;
     }
-    
+
     ## Everything OK, log and unlock document
     system("rm -rf ./servers/tmp/nlp/$document->{id}");
     RExtractor::Tools::info($LOG, "NLP of the document $document->{id} finished.");

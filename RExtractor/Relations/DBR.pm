@@ -74,6 +74,7 @@ sub parseQueries {
         $self->{queries}{$id}{description} = $description;
         $self->{queries}{$id}{what_mark} = \@what_mark;
         $self->{queries}{$id}{to_rdf} = \@to_rdf;
+        $self->{queries}{$id}{pmltq} = $query->findnodes("./pml_tq")->to_literal();
     }
 
     #print STDERR "Number of parsed queries: " . scalar(keys %{$self->{queries}}) . "\n";

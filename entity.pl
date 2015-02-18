@@ -6,7 +6,7 @@ use POSIX;
 
 use RExtractor::Tools;
 use RExtractor::Document;
-use RExtractor::Entities::Annotation;
+use RExtractor::Strategy;
 
 $SIG{INT}  = \&_signalHandler;
 $SIG{KILL} = \&_signalHandler;
@@ -31,13 +31,6 @@ if (!RExtractor::Tools::writeFile("./servers/pids/entity.pid", $$)) {
     exit(1);
 }
 
-# Load Treex Scenario
-my $scenario = "./database/entities.scen";
-if (not (-f $scenario)) {
-    RExtractor::Tools::error($LOG, "Couldn't load entity detection scenario. Terminating...");
-    exit(1);
-}
-
 RExtractor::Tools::info($LOG, "Entity server ($$) started.");
 
 # Process document
@@ -54,37 +47,30 @@ while (42) {
 
     RExtractor::Tools::info($LOG, "Entity detection for document $document->{id} started.");
 
-    ##
-    ## Run treex
-    ##
+    # Obtain strategy id
+    my $strategy_id = RExtractor::Tools::getDocumentStrategy($document->{id});
 
-    my $output_file = "./servers/tmp/entity/$document->{id}.csv";
-    my $treex_return_value = system("
-        export TMT_ROOT=/data/intlib/treex/;
-        export TRED_DIR=\"/data/intlib/tred\";
-        export TRED_DEPENDENCIES=\"/data/intlib/tred/dependencies\";
-        PATH=\"\${TRED_DEPENDENCIES}/bin:\${PATH}\";
-        export PERL5LIB=\"\${TRED_DEPENDENCIES}/lib/perl5\${PERL5LIB:+:\$PERL5LIB}\";
-        export LD_LIBRARY_PATH=\"\${TRED_DEPENDENCIES}/lib:\${LD_LIBRARY_PATH}\";
-        treex $scenario Write::Treex clobber=1 -- $document->{filename} >$output_file"
-    );
-    if ($treex_return_value) {
-        # Delete tmp files
-        system("rm -rf ./servers/tmp/entity/$document->{id}.csv");
-        RExtractor::Tools::error($LOG, "Error occured while entity detection process in the document ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during entity detection in treex.");
+    # Load strategy
+    my $Strategy = new RExtractor::Strategy();
+    if (!$Strategy->loadFile("./strategies/$strategy_id.xml")) {
+        RExtractor::Tools::error($LOG, "Couldn't load strategy from './strategies/$strategy_id.xml'.");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Couldn't load strategy.");
         RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
         next;
     }
 
-    ##
-    ## Process output file with entities
-    ##
+    # Check, if Strategy configuration contains all needed attributes
+    if (!$Strategy->check("entities")) {
+        RExtractor::Tools::error($LOG, "Strategy is incorrect or incomplete. ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Couldn't load strategy.");
+        RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
+        next;
+    }
 
-    # Open document
+    RExtractor::Tools::info($LOG, "Applying entities detection strategy '$strategy_id'.");
+
     my $Document = new RExtractor::Document();
     if (!$Document->load("./data/converted/$document->{id}.xml")) {
-        # Delete tmp files
         system("rm -rf ./servers/tmp/entity/$document->{id}.csv");
         RExtractor::Tools::error($LOG, "Couldn't load XML document ($document->{id}).");
         RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during loading XML document.");
@@ -93,7 +79,6 @@ while (42) {
     }
 
     if (!$Document->parseChunks() or !$Document->parseEntities()) {
-        # Delete tmp files
         system("rm -rf ./servers/tmp/entity/$document->{id}.csv");
         RExtractor::Tools::error($LOG, "Couldn't parse XML document ($document->{id}).");
         RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during parsing XML document.");
@@ -104,7 +89,6 @@ while (42) {
     # Load serialized Document
     my $Serialized = new RExtractor::Annotation::Serialize();
     if (!$Serialized->load("./data/serialized/$document->{id}.csv")) {
-        # Delete tmp files
         system("rm -rf ./servers/tmp/entity/$document->{id}.csv");
         RExtractor::Tools::error($LOG, "Couldn't open serialized file './data/serialized/$document->{id}.csv'.");
         RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during loading serialized file.");
@@ -112,23 +96,12 @@ while (42) {
         next;
     }
 
-    # Annotate relations into Document
-    my $Annotate = new RExtractor::Entities::Annotation();
-
-    if (!$Annotate->load($output_file)) {
-        # Delete tmp files
+    eval("use $Strategy->{entities}{package}");
+    my $Entity = eval("new $Strategy->{entities}{package}");
+    if (!$Entity->process($Strategy, $Document, $Serialized)) {
         system("rm -rf ./servers/tmp/entity/$document->{id}.csv");
-        RExtractor::Tools::error($LOG, "Couldn't load PMLTQ results from file '$output_file' ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during parsing PMLTQ results for document.");
-        RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
-        next;
-    }
-
-    if (!$Annotate->annotate($Document, $Serialized)) {
-        # Delete tmp files
-        system("rm -rf ./servers/tmp/entity/$document->{id}.csv");
-        RExtractor::Tools::error($LOG, "Couldn't save entity annotations in document ($document->{id}).");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during annotating entities in document.");
+        RExtractor::Tools::error($LOG, "Error occured while entities detection process in the document ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "510 Error occured during entities detection.");
         RExtractor::Tools::deleteFile("./data/treex/$document->{id}.lock");
         next;
     }

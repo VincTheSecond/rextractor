@@ -6,7 +6,8 @@ use POSIX;
 
 use RExtractor::Tools;
 use RExtractor::Document;
-use RExtractor::Export::INTLIB;
+use RExtractor::Export;
+use RExtractor::Strategy;
 
 $SIG{INT}  = \&_signalHandler;
 $SIG{KILL} = \&_signalHandler;
@@ -49,6 +50,28 @@ while (42) {
 
     RExtractor::Tools::info($LOG, "Export process for document $document->{id} started.");
 
+    # Obtain strategy id
+    my $strategy_id = RExtractor::Tools::getDocumentStrategy($document->{id});
+
+    # Load strategy
+    my $Strategy = new RExtractor::Strategy();
+    if (!$Strategy->loadFile("./strategies/$strategy_id.xml")) {
+        RExtractor::Tools::error($LOG, "Couldn't load strategy from './strategies/$strategy_id.xml'.");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "710 Couldn't load strategy.");
+        RExtractor::Tools::deleteFile("./data/converted/$document->{id}.lock");
+        next;
+    }
+
+    # Check, if Strategy configuration contains all needed attributes
+    if (!$Strategy->check("export")) {
+        RExtractor::Tools::error($LOG, "Strategy is incorrect or incomplete. ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "710 Couldn't load strategy.");
+        RExtractor::Tools::deleteFile("./data/converted/$document->{id}.lock");
+        next;
+    }
+
+    RExtractor::Tools::info($LOG, "Applying export strategy '$strategy_id'.");
+    
     ##
     ## Process output file
     ##
@@ -82,23 +105,16 @@ while (42) {
         next;
     }
 
-    my $Export = new RExtractor::Export::INTLIB();
-    if (!$Export->load("./data/submitted/$document->{id}.html")) {
-        RExtractor::Tools::error($LOG, "Couldn't open submitted HTML file './data/submitted/$document->{id}.html'.");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "710 Error occured during loading submitted file.");
+    # Process
+    eval("use $Strategy->{export}{package}");
+    my $Export = eval("new $Strategy->{export}{package}");
+    if (!$Export->process($Document, $Serialized)) {
+        system("rm -rf ./servers/tmp/relation/$document->{id}.csv");
+        RExtractor::Tools::error($LOG, "Error occured during export in the document ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "710 Error occured during export.");
         RExtractor::Tools::deleteFile("./data/converted/$document->{id}.lock");
         next;
     }
-
-    if (!$Export->export($Document, $Serialized)) {
-        RExtractor::Tools::error($LOG, "Couldn't export annotation into file './data/submitted/$document->{id}.html'.");
-        RExtractor::Tools::setDocumentStatus($document->{id}, "710 Error occured during export process.");
-        RExtractor::Tools::deleteFile("./data/converted/$document->{id}.lock");
-        next;
-    }
-
-    $Export->save("./data/exported/$document->{id}.html");
-    $Export->saveDescription($Document, $Serialized, "./data/exported/$document->{id}.xml");
 
     ## Everything OK, log and unlock document
     RExtractor::Tools::info($LOG, "Export process for document $document->{id} finished.");

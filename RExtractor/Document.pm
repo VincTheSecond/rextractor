@@ -33,7 +33,7 @@ sub load {
 
     # Document ID
     my $id = $filename;
-    $id =~ s/^(?:.*\/)?([^\/]+)$/$1/;
+    $id =~ s/(?:.*\/)?([^\/]+)\.xml/$1/;
     $self->{id} = $id;
 
     # Remember or create chunk node in description section
@@ -95,7 +95,6 @@ sub parseRelations {
         }
     }
 
-    print STDERR "Parse relations finished. max_used_relation_id = $self->{max_used_relation_id}\n";
     return 1;
 }
 
@@ -127,7 +126,6 @@ sub parseChunks {
         $self->{nodes2chunk_id}{join(" ", sort @nodes)} = $chunk_id;
     }
 
-    print STDERR "Parse chunks finished. max_used_chunk_id = $self->{max_used_chunk_id}\n";
     return 1;
 }
 
@@ -154,7 +152,7 @@ sub createChunk {
 
     # From the first node obtain text_id
     my $text_id = $$ra_nodes[0];
-    $text_id =~ s/^a_tree-cs-(\d+)-.*$/$1/;
+    $text_id =~ s/^a_tree-(?:en|cs)-(\d+)-.*$/$1/;
     $text_id =~ s/^0+//;
 
     # Make annotation record

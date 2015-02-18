@@ -62,7 +62,8 @@ if ($COMMAND eq "document-submit") {
     # Load params
     my $doc_id = $Source->param("doc_id");
     my $doc_content = $Source->param("doc_content");
-    print RExtractor::API::b2_document_submit($doc_id, $doc_content, undef);
+    my $doc_strategy = $Source->param("doc_strategy");
+    print RExtractor::API::b2_document_submit($doc_strategy, $doc_id, $doc_content, undef);
 
     exit 0;
 }
@@ -168,6 +169,43 @@ if ($COMMAND eq "list-all") {
     my $order_dir = $Source->url_param("order_dir") ? $Source->url_param("order_dir") : "DESC";
 
     print RExtractor::API::e7_list_all($start, $limit, $order_by, $order_dir);
+    exit 0;
+}
+
+## F.1 BROWSING STRATEGIES
+## Returns HTML presentation of specified strategy
+if ($COMMAND eq "strategy-html") {
+    print "Content-type: text/html\n\n";
+
+    # Load params
+    my $strategy_id = $Source->param("strategy_id") ? $Source->param("strategy_id") : "";
+    print RExtractor::API::f1_strategy_html($strategy_id);
+    exit 0;
+}
+
+## G.1 BROWSING DBE
+## Returns HTML presentation of specified DBE
+if ($COMMAND eq "dbe-html") {
+    binmode(STDOUT, ":encoding(utf8)");
+    print "Content-type: text/html\n\n";
+
+    # Load params
+    print STDERR "index\n"; # FIXME
+    my $dbe_id = $Source->param("dbe_id") ? $Source->param("dbe_id") : "";
+    print RExtractor::API::g1_dbe_html($dbe_id);
+    exit 0;
+}
+
+## G.1 BROWSING DBR
+## Returns HTML presentation of specified DBR
+if ($COMMAND eq "dbr-html") {
+    binmode(STDOUT, ":encoding(utf8)");
+    print "Content-type: text/html\n\n";
+
+    # Load params
+    print STDERR "index\n"; # FIXME
+    my $dbr_id = $Source->param("dbr_id") ? $Source->param("dbr_id") : "";
+    print RExtractor::API::h1_dbr_html($dbr_id);
     exit 0;
 }
 
