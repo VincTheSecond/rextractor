@@ -26,6 +26,16 @@ var strategies = {
     'intlib_cz': 'Czech legal text'
 };
 
+var dbes = {
+    'entities_en': 'English legal text',
+    'entities_cz': 'Czech legal text'
+};
+
+var dbrs = {
+    'relations_en': 'English legal text',
+    'relations_cz': 'Czech legal text'
+};
+
 // Start with welcome screen
 jQuery('body').ready(function() {
     applet_server_status();
@@ -46,6 +56,21 @@ function run_list(id_to_highlight, refresh) {
 function run_submit() {
     clear_main_column();
     applet_submit();
+}
+
+function run_sb() {
+    clear_main_column();
+    applet_sb();
+}
+
+function run_dbe() {
+    clear_main_column();
+    applet_dbe();
+}
+
+function run_dbr() {
+    clear_main_column();
+    applet_dbr();
 }
 
 function run_document(id) {
@@ -316,6 +341,23 @@ function applet_submit() {
     form += "<textarea id='new_submit_content'>" + content + "</textarea><br>";
     form += "<input id='new_submit_submit' type='button' value='Submit new job!' onClick='applet_submit_click()'>";
 
+    // Box with sample data
+    var tooltip = "";
+    tooltip += "<div id='new_submit_tooltip_en'>";
+    tooltip += "<img src='./images/icon_idea.png' class='new_submit_tooltip_icon'>";
+    tooltip += "<p>Samples of English legal texts: ";
+    tooltip += "<a href='http://www.usoud.cz/en/constitution-of-the-czech-republic/' target='_blank'>Constitution of the Czech Republic</a>, ";
+    tooltip += "<a href='http://www.cnb.cz/miranda2/export/sites/www.cnb.cz/en/legislation/acts/download/act_on_cnb.pdf' target='_blank'>Bank Act</a>, ";
+    tooltip += "<a href='http://ipk.nkp.cz/docs/Law25720013412006eng.doc' target='_blank'>Libraries Act</a>, ";
+    tooltip += "<a href='http://www.usoud.cz/en/charter-of-fundamental-rights-and-freedoms/' target='_blank'>Charter of fundamental rights and freedoms</a>";
+    tooltip += "</div>";
+    tooltip += "<div id='new_submit_tooltip_cz'>";
+    tooltip += "<img src='./images/icon_idea.png' class='new_submit_tooltip_icon'>";
+    tooltip += "<p>Samples of Czech legal texts: ";
+    tooltip += "<a href='http://www.zakonyprolidi.cz/' target='_blank'>ZákonyProLidi.cz</a>, ";
+    tooltip += "<a href='https://portal.gov.cz/app/zakony/?path=/portal/obcan/' target='_blank'>Portál veřejné správy</a> ";
+    tooltip += "</div>";
+
     var output = "";
     output += "<div class='box'>";
     output += "<h2>Submit new job</h2>"
@@ -323,6 +365,7 @@ function applet_submit() {
     output += "<div class='message'>" + message + "</div>";
     output += "<div class='form'>";
     output += form;
+    output += tooltip;
     output += "</div>";
     output += "<div class='data'></div>";
     output += "</div>";
@@ -333,6 +376,19 @@ function applet_submit() {
         jQuery(this).slideDown();
     });
     box.find('.loading').slideUp();
+
+    // When strategy change, show language dependent tooltip
+    jQuery('#new_submit_strategy').change(function() {
+        var value = jQuery(this).val();
+        if (value.match(/en/) && jQuery('#new_submit_tooltip_en').css('display') == "none") {
+            jQuery('#new_submit_tooltip_cz').slideUp();
+            jQuery('#new_submit_tooltip_en').slideDown();
+        }
+        if (value.match(/cz/) && jQuery('#new_submit_tooltip_cz').css('display') == "none") {
+            jQuery('#new_submit_tooltip_cz').slideDown();
+            jQuery('#new_submit_tooltip_en').slideUp();
+        }
+    });
 }
 
 function applet_submit_click() {
@@ -346,6 +402,7 @@ function applet_submit_click() {
     strategy = jQuery('#new_submit_strategy').val();
 
     // Check data
+    id = id.replace(/\W+/, "");
     if (!id.match(/^\w+$/)) {
         message = "<p class='error'>Incorrect job identifier.";
         run_submit();
@@ -366,7 +423,17 @@ function applet_submit_click() {
     
     // If there is no HTML tags, put <p> tags around the text
     if (!content.match(/^<p>/)) {
-        content = "<p>" + content + "</p>";
+        var new_content = "";
+        new_content += "<?xml version='1.0' encoding='utf-8'?>\n";
+        new_content += "<article>\n";
+        new_content += "\t<section>\n";
+        lines = content.split(/\n/);
+        for (line_id = 0; line_id < lines.length; line_id++) {
+            new_content += "\t\t<p>" + lines[line_id] + "</p>\n";
+        }
+        new_content += "\t</section>\n";
+        new_content += "</article>\n";
+        content = new_content;
     }
 
     // Everything OK, submit query on the server
@@ -379,7 +446,10 @@ function applet_submit_click() {
         },
         success: function(data) {
             if (data.match(/OK/)) {
-                message = "<p class='ok'>Job submitted correctly.</p>"
+                message = "<p class='ok'>Job submitted correctly.</p>";
+                id = "";
+                strategy = "";
+                content = "";
                 run_list(id);
             }
             else {
@@ -388,10 +458,8 @@ function applet_submit_click() {
             }
         },
         error: function() {
-            alert("Chyba");
         }
     });
-    alert("Strategy = " + strategy)
 }
 
 function applet_document(id) {
@@ -415,6 +483,225 @@ function applet_document(id) {
     get_document_relations(id, box);
 }
 
+function applet_sb() {
+    // Clear timeout
+    clearTimeout(timeout);
+
+    // Form
+    var form = "";
+    form += "<p>Select extraction strategy: ";
+    form += "<select id='sb_strategy'>";
+    for (strategy_id in strategies) {
+        form += "<option value='" + strategy_id + "'>" + strategies[strategy_id] + "</option>";
+    }
+    form += "</select> ";
+    form += "<input id='sb_submit' type='button' value='Browse' onClick='applet_sb_click()'>";
+
+    // Output
+    var output = "";
+    output += "<div class='box'>";
+    output += "<h2>Browse extraction strategies</h2>"
+    output += "<div class='loading'></div>";
+    output += "<div class='message'>" + message + "</div>";
+    output += "<div class='form'>";
+    output += form;
+    output += "</div>";
+    output += "<div class='data'></div>";
+    output += "</div>";
+
+    // Hide loading and show table
+    box = jQuery('#main-column').append(output);
+    jQuery('#main-column').find('.box').each(function() {
+        jQuery(this).slideDown();
+    });
+    box.find('.loading').slideUp();
+}
+
+function applet_sb_click() {
+    // Hide form, show loading
+    jQuery('.form').slideUp();
+    box.find('.loading').slideDown();
+
+    // Read data
+    strategy = jQuery('#sb_strategy').val();
+
+    // Check data
+    if (!strategy.match(/^\w+$/)) {
+        message = "<p class='error'>Incorrect extraction strategy. Please, select one from the menu.</p>";
+        run_sb();
+        return;
+    }
+
+    // Everything OK, submit query on the server
+    jQuery.ajax({
+        url: "./index.cgi?command=strategy-html",
+        data: {
+          strategy_id: strategy,
+        },
+        success: function(data) {
+            if (data.match(/OK/)) {
+                data = data.replace("[OK]\n", "");
+                box.find('.loading').slideUp();
+                box.find('.data').slideUp();
+                box.find(".data").html(data);
+                box.find(".data").slideDown();
+            }
+            else {
+                message = "<p class='error'>" + data + "</p>";
+                run_sb();
+            }
+        },
+        error: function() {
+        }
+    });
+}
+
+function applet_dbe() {
+    // Clear timeout
+    clearTimeout(timeout);
+
+    // Form
+    var form = "";
+    form += "<p>Select Database of Entities: ";
+    form += "<select id='dbe_id'>";
+    for (dbe_id in dbes) {
+        form += "<option value='" + dbe_id + "'>" + dbes[dbe_id] + "</option>";
+    }
+    form += "</select> ";
+    form += "<input id='dbe_submit' type='button' value='Browse' onClick='applet_dbe_click()'>";
+
+    // Output
+    var output = "";
+    output += "<div class='box'>";
+    output += "<h2>Browse Database of Entities</h2>"
+    output += "<div class='loading'></div>";
+    output += "<div class='message'>" + message + "</div>";
+    output += "<div class='form'>";
+    output += form;
+    output += "</div>";
+    output += "<div class='data'></div>";
+    output += "</div>";
+
+    // Hide loading and show table
+    box = jQuery('#main-column').append(output);
+    jQuery('#main-column').find('.box').each(function() {
+        jQuery(this).slideDown();
+    });
+    box.find('.loading').slideUp();
+}
+
+function applet_dbe_click() {
+    // Hide form, show loading
+    jQuery('.form').slideUp();
+    box.find('.loading').slideDown();
+
+    // Read data
+    dbe_id = jQuery('#dbe_id').val();
+
+    // Check data
+    if (!dbe_id.match(/^\w+$/)) {
+        message = "<p class='error'>Incorrect DBE ID. Please, select one from the menu.</p>";
+        run_dbe();
+        return;
+    }
+
+    // Everything OK, submit query on the server
+    jQuery.ajax({
+        url: "./index.cgi?command=dbe-html",
+        data: {
+          dbe_id: dbe_id,
+        },
+        success: function(data) {
+            if (data.match(/OK/)) {
+                data = data.replace("[OK]\n", "");
+                box.find('.loading').slideUp();
+                box.find('.data').slideUp();
+                box.find(".data").html(data);
+                box.find(".data").slideDown();
+            }
+            else {
+                message = "<p class='error'>" + data + "</p>";
+                run_sb();
+            }
+        },
+        error: function() {
+        }
+    });
+}
+
+function applet_dbr() {
+    // Clear timeout
+    clearTimeout(timeout);
+
+    // Form
+    var form = "";
+    form += "<p>Select Database of Relations: ";
+    form += "<select id='dbr_id'>";
+    for (dbr_id in dbrs) {
+        form += "<option value='" + dbr_id + "'>" + dbrs[dbr_id] + "</option>";
+    }
+    form += "</select> ";
+    form += "<input id='dbr_submit' type='button' value='Browse' onClick='applet_dbr_click()'>";
+
+    // Output
+    var output = "";
+    output += "<div class='box'>";
+    output += "<h2>Browse Database of Relations</h2>"
+    output += "<div class='loading'></div>";
+    output += "<div class='message'>" + message + "</div>";
+    output += "<div class='form'>";
+    output += form;
+    output += "</div>";
+    output += "<div class='data'></div>";
+    output += "</div>";
+
+    // Hide loading and show table
+    box = jQuery('#main-column').append(output);
+    jQuery('#main-column').find('.box').each(function() {
+        jQuery(this).slideDown();
+    });
+    box.find('.loading').slideUp();
+}
+
+function applet_dbr_click() {
+    // Hide form, show loading
+    jQuery('.form').slideUp();
+    box.find('.loading').slideDown();
+
+    // Read data
+    dbr_id = jQuery('#dbr_id').val();
+
+    // Check data
+    if (!dbr_id.match(/^\w+$/)) {
+        message = "<p class='error'>Incorrect DBR ID. Please, select one from the menu.</p>";
+        run_dbr();
+        return;
+    }
+
+    // Everything OK, submit query on the server
+    jQuery.ajax({
+        url: "./index.cgi?command=dbr-html",
+        data: {
+          dbr_id: dbr_id,
+        },
+        success: function(data) {
+            if (data.match(/OK/)) {
+                data = data.replace("[OK]\n", "");
+                box.find('.loading').slideUp();
+                box.find('.data').slideUp();
+                box.find(".data").html(data);
+                box.find(".data").slideDown();
+            }
+            else {
+                message = "<p class='error'>" + data + "</p>";
+                run_sb();
+            }
+        },
+        error: function() {
+        }
+    });
+}
+
 function clear_main_column() {
     jQuery('#main-column').find('.box').each(function() {
         jQuery(this).fadeOut();
@@ -430,46 +717,27 @@ function get_document_relations(doc_id, box) {
             output += "<h3>Relations</h3>";
 
             var lines = data.split(/\n/);
-            for (var i = 0; i < lines.length; i++) {
-                var fields = lines[i].split(/\t/);
-                if (fields.length == 10) {
-                    output += "<tr>";
-                    output += "<td>" + fields[0] + "</td>";
-                    output += "<td>" + fields[1] + "</td>";
-                    output += "<td>" + fields[2] + "</td>";
-                    output += "<td>" + fields[3] + "</td>";
-                    output += "<td>" + fields[4] + "</td>";
-                    output += "<td>" + fields[5] + "</td>";
-                    output += "<td>" + fields[6] + "</td>";
-                    output += "<td>" + fields[7] + "</td>";
-                    output += "<td>" + fields[8] + "</td>";
-                    output += "<td>" + fields[9] + "</td>";
-                    output += "</tr>";
-                }
-                if (lines[i].match(/<h4>/)) {
-                    output += "</table>";
-                    output += lines[i];
-                }
-                if (lines[i].match(/<i>/)) {
-                    output += lines[i];
-                    output += "<table class='list'>";
-                    output += "<tr>";
-                    output += "<th>Relation</th>";
-                    output += "<th colspan=3>Subject</th>";
-                    output += "<th colspan=3>Predicate</th>";
-                    output += "<th colspan=3>Object</th>";
-                    output += "</tr>";
-                }
+            for (var i = 1; i < lines.length - 3; i += 3) {
+                output += "<div class='relations_relation'>";
+                output += "<h4>" + lines[i] + "</h4>";
+                output += "<table class='list'>";
+                output += "<tr><th>Subject</th><th>Predicate</th><th>Object</th></tr>";
+
+                var fields = lines[i + 1].split(/\t/);
+                output += "<tr>";
+                output += "<td>" + fields[1] + "</td>";
+                output += "<td>" + fields[3] + "</td>";
+                output += "<td>" + fields[5] + "</td>";
+                output += "</tr>";
+                output += "</table>";
+
+                output += "<div class='document_relation'>";
+                output += lines[i + 2];
+                output += "</div>";
+                output += "</div>";
             }
 
-            output += "</table>";
             box.find(".relations").html(output);
-
-            // Highlighting relations
-            //jQuery('.chunk').click(function() {
-            //    chunk_id = jQuery(this).attr('id');
-            //    highlight_chunk(doc_id, chunk_id, box);
-            //});
         },
         error: function() {
             box.find(".relations").html("<h3>Relations</h3><div class='document'><p>Couldn't retrieve relations.</p></div>");
@@ -478,19 +746,20 @@ function get_document_relations(doc_id, box) {
 }
 
 function get_document_content(doc_id, box) {
-    box.find(".content").html("<h3>Document</h3><div class='loading'></div>");
+    box.find(".content").html("<h3>Entities</h3><div class='loading'></div>");
 
     jQuery.ajax({
         url: "./index.cgi?command=content-html&doc_id=" + doc_id,
         success: function(data) {
-            box.find(".content").html("<h3>Document</h3><div class='document'>" + data + "</div><div class='entities'></div><div style='clear: both'></div>");
+            data = data.replace("[OK]\n", "");
+            box.find(".content").html("<h3>Entities</h3><div class='document'>" + data + "</div><div class='entities'></div><div style='clear: both'></div>");
             jQuery('.chunk').click(function() {
                 chunk_id = jQuery(this).attr('id');
                 highlight_chunk(doc_id, chunk_id, box);
             });
         },
         error: function() {
-            box.find(".content").html("<h3>Document</h3><div class='document'><p>Couldn't retrieve document.</p></div><div class='entities'></div><div style='clear: both'></div>");
+            box.find(".content").html("<h3>Entities</h3><div class='document'><p>Couldn't retrieve document.</p></div><div class='entities'></div><div style='clear: both'></div>");
         }
     });
 }
@@ -506,17 +775,22 @@ function highlight_chunk(doc_id, chunk_id, box) {
             // Fill entities box
             var output = "";
             var entities = data.split("\n");
-            for (var i = 0; i < entities.length - 1; i++) {
+            for (var i = 1; i < entities.length - 1; i++) {
                 var fields = entities[i].split(/\t/);
-                output += "<div class='highlighted_entity' id='" + i + "'>";
-                output += "Entity: " + fields[0] + "<br>";
-                output += "Chunks: " + fields[1] + "<br>";
-                output += "<b>" + fields[2] + "</b><br>";
-                output += "<i>" + fields[3] + "</i>";
-                output += "</div>";
+                if (fields[2]) {
+                    output += "<div class='highlighted_entity' id='" + i + "'>";
+                    output += "<b>" + fields[2] + "</b><br>";
+                    output += "<i>" + fields[3] + "</i>";
+                    output += "</div>";
+                }
+                //else {
+                //    output += "<i>Chunk is a part of entity automatically created during relation extraction.</i>";
+                //}
+                //output += "Entity: " + fields[0] + "<br>";
+                //output += "Chunks: " + fields[1] + "<br>";
             }
 
-            box.find(".entities").html("<h2>Chunk details</h2><p>" + output + "</p>");
+            box.find(".entities").html("<h2>Entity details</h2><p>" + output + "</p>");
 
             // Highlight entity
             jQuery('.highlighted_entity').hover(function() {

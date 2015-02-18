@@ -78,7 +78,10 @@ sub getMenu {
     $output .= "<li><a href='javascript:run_text(\"about\");'>Learn more</a>";
     $output .= "<li><a href='javascript:run_submit()'>Submit new job</a>";
     $output .= "<li><a href='javascript:run_list();'>Browse submitted jobs</a>";
-    $output .= "<li><a href='javascript:run_text(\"contact\");'>Contact</a>";
+    $output .= "<li><a href='javascript:run_sb();'>Browse strategies</a>";
+    $output .= "<li><a href='javascript:run_dbe();'>Browse entities</a>";
+    $output .= "<li><a href='javascript:run_dbr();'>Browse relations</a>";
+    #$output .= "<li><a href='javascript:run_text(\"contact\");'>Contact</a>";
     $output .= "</ul>";
     $output .= "</div>";
 }
@@ -145,7 +148,7 @@ sub getFooter {
 
     my $output = "";
     $output .= "<div id='footer'>";
-    $output .= "<p>&copy; 2015 Vincent Kríž</p>";
+    #$output .= "<p>&copy; 2015 Vincent Kríž</p>";
     $output .= "</div>";
 
     return $output;

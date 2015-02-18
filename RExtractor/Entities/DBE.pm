@@ -30,6 +30,23 @@ sub load {
     return 1;
 }
 
+# Parse whole DBE into this object
+sub parse {
+    my ($self) = @_;
+
+    $self->{dbe} = {};
+    my @xml_entities = $self->{xml}->findnodes("//entity");
+    foreach my $xml_entity (@xml_entities) {
+        my $id = $xml_entity->getAttribute("id");
+        $self->{dbe}{$id}{type} = $xml_entity->findnodes("./type")->to_literal();
+        $self->{dbe}{$id}{original_form} = $xml_entity->findnodes("./original_form")->to_literal();
+        $self->{dbe}{$id}{lemmatized} = $xml_entity->findnodes("./lemmatized")->to_literal();
+        $self->{dbe}{$id}{pmltq} = $xml_entity->findnodes("./pml_tq")->to_literal();
+    }
+
+    return 1;
+}
+
 sub getEntity {
     my ($self, $dbe_id) = @_;
 

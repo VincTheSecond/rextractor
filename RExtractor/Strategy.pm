@@ -3,6 +3,8 @@
 use strict;
 use warnings;
 
+use XML::LibXML;
+
 package RExtractor::Strategy;
 
 sub new {
@@ -15,11 +17,10 @@ sub new {
 
 sub loadFile {
     my ($self, $filename) = @_;
-    print STDERR "RExtractor::Strategy::loadFile(@_)\n";
 
     # Parse XML
     eval {
-        $self->{xml} = XML::LibXML->load_xml(location => $filename);
+        $self->{xml} = XML::LibXML->load_xml(location => "$filename");
     };
     if ($@) {
         $self->{error} = $@;
@@ -29,37 +30,31 @@ sub loadFile {
     # METADATA
     foreach my $attribute ("name", "description") {
         $self->{metadata}{$attribute} = $self->_getValue("/strategy/metadata/$attribute");
-        print "[STRATEGY] \$self->{metadata}{$attribute} = $self->{metadata}{$attribute}\n";
     }
 
     # CONVERSION
     foreach my $attribute ("package") {
         $self->{conversion}{$attribute} = $self->_getValue("/strategy/conversion/$attribute");
-        print "[STRATEGY] \$self->{conversion}{$attribute} = $self->{conversion}{$attribute}\n";
     }
 
     # NLP
     foreach my $attribute ("package", "segmentation", "morphology") {
         $self->{nlp}{$attribute} = $self->_getValue("/strategy/nlp/$attribute");
-        print "[STRATEGY] \$self->{nlp}{$attribute} = $self->{nlp}{$attribute}\n";
     }
 
     # ENTITIES
-    foreach my $attribute ("package", "detection") {
+    foreach my $attribute ("package", "dbe_file", "detection") {
         $self->{entities}{$attribute} = $self->_getValue("/strategy/entities/$attribute");
-        print "[STRATEGY] \$self->{entities}{$attribute} = $self->{entities}{$attribute}\n";
     }
 
     # RELATIONS
     foreach my $attribute ("package", "dbr_file", "detection") {
         $self->{relation}{$attribute} = $self->_getValue("/strategy/relation/$attribute");
-        print "[STRATEGY] \$self->{relation}{$attribute} = $self->{relation}{$attribute}\n";
     }
 
     # EXPORT
     foreach my $attribute ("package") {
         $self->{export}{$attribute} = $self->_getValue("/strategy/export/$attribute");
-        print "[STRATEGY] \$self->{export}{$attribute} = $self->{export}{$attribute}\n";
     }
 
     return 1;

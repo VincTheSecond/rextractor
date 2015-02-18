@@ -43,7 +43,7 @@ sub _runDetection {
 
     my $filename = "./data/treex/$self->{document}{id}.treex.gz";
 
-    my $command = $self->{strategy}{entity}{detection};
+    my $command = $self->{strategy}{entities}{detection};
     $command =~ s/#DOCUMENT_FILENAME#/$filename/;
     $command =~ s/#OUTPUT_FILE#/$self->{output_file}/;
 

@@ -7,6 +7,10 @@ use Date::Parse;
 use RExtractor::Relations::DBR;
 use RExtractor::Entities::DBE;
 use RExtractor::Presentation::INTLIB;
+use RExtractor::Presentation::Strategy;
+use RExtractor::Presentation::DBE;
+use RExtractor::Presentation::DBR;
+use RExtractor::Strategy;
 
 package RExtractor::API;
 
@@ -218,9 +222,16 @@ sub c2_content_chunks {
         return "[ERROR]\nIncorrent chunk id.\n";
     }
 
+    # Load Strategy
+    my $strategy_id = RExtractor::Tools::getDocumentStrategy($doc_id);
+    my $Strategy = new RExtractor::Strategy();
+    if (!$Strategy->loadFile("./strategies/$strategy_id.xml")) {
+        return "[ERROR]\nIncorrent strategy id.\n";
+    }
+
     # Load DBE
     my $DBE = new RExtractor::Entities::DBE();
-    $DBE->load("./database/entities.xml");
+    $DBE->load($Strategy->{entities}{dbe_file});
 
     # Load document
     my $Document = new RExtractor::Presentation::INTLIB();
@@ -270,9 +281,16 @@ sub c3_content_relations {
         return "[ERROR]\nDocument is still processed by RExtractor system. You can browse only fully processed and exported documents.\n";
     }
 
+    # Load Strategy
+    my $strategy_id = RExtractor::Tools::getDocumentStrategy($doc_id);
+    my $Strategy = new RExtractor::Strategy();
+    if (!$Strategy->loadFile("./strategies/$strategy_id.xml")) {
+        return "[ERROR]\nIncorrent strategy id.\n";
+    }
+
     # Load DBR
     my $DBR = new RExtractor::Relations::DBR();
-    $DBR->load("./database/relations.xml");
+    $DBR->load($Strategy->{relation}{dbr_file});
     $DBR->parseQueries();
 
     # Load document and return as HTML
@@ -442,7 +460,7 @@ sub e7_list_all {
         $order_dir = "desc";
     }
 
-    my @list = split(/\n/, `grep 200 data/logs/* | cut -f 1 -d ':' | cut -f 3 -d '/' | cut -f 1 -d '.'`);
+    my @list = split(/\n/, `grep -H 200 data/logs/* | cut -f 1 -d ':' | cut -f 3 -d '/' | cut -f 1 -d '.'`);
     my %data = ();
     foreach my $id (@list) {
         my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size, $atime, $mtime, $ctime, $blksize, $blocks) = stat("data/submitted/$id.html");
@@ -475,6 +493,76 @@ sub e7_list_all {
     }
 
     return $output;
+}
+
+## F.1 BROWSE STRATEGIES
+## Returns HTML version of document with chunks annotated by <span> tags
+sub f1_strategy_html {
+    my ($strategy_id) = @_;
+
+    # Check file
+    my $filename = "./strategies/$strategy_id.xml";
+    if (not(-r $filename)) {
+        return "[ERROR]\nIncorrect strategy ID.\n";
+    }
+
+    # Load Strategy
+    my $Strategy = new RExtractor::Strategy();
+    if (!$Strategy->loadFile("./strategies/$strategy_id.xml")) {
+        return "[ERROR]\nIncorrent strategy ID.\n";
+    }
+
+    # Return HTML presentation of the document
+    my $Format = new RExtractor::Presentation::Strategy();
+    return "[OK]\n" . $Format->formatStrategy($Strategy);
+}
+
+## G.1 BROWSE DBE
+## Returns HTML version of DBE
+sub g1_dbe_html {
+    my ($dbe_id) = @_;
+    print STDERR "API: $dbe_id\n"; # FIXME
+
+    # Check file
+    my $filename = "./database/$dbe_id.xml";
+    if (not(-r $filename)) {
+        return "[ERROR]\nIncorrect DBE ID.\n";
+    }
+
+    # Load Strategy
+    my $DBE = new RExtractor::Entities::DBE();
+    if (!$DBE->load("./database/$dbe_id.xml")) {
+        return "[ERROR]\nIncorrent DBE ID.\n";
+    }
+    $DBE->parse();
+
+    # Return HTML presentation of the document
+    my $Format = new RExtractor::Presentation::DBE();
+    return "[OK]\n" . $Format->formatDBE($DBE);
+}
+
+## H.1 BROWSE DBR
+## Returns HTML version of DBR
+sub h1_dbr_html {
+    my ($dbr_id) = @_;
+    print STDERR "API: $dbr_id\n"; # FIXME
+
+    # Check file
+    my $filename = "./database/$dbr_id.xml";
+    if (not(-r $filename)) {
+        return "[ERROR]\nIncorrect DBR ID.\n";
+    }
+
+    # Load Strategy
+    my $DBR = new RExtractor::Relations::DBR();
+    if (!$DBR->load("./database/$dbr_id.xml")) {
+        return "[ERROR]\nIncorrent DBR ID.\n";
+    }
+    $DBR->parseQueries();
+
+    # Return HTML presentation of the document
+    my $Format = new RExtractor::Presentation::DBR();
+    return "[OK]\n" . $Format->formatDBR($DBR);
 }
 
 1;

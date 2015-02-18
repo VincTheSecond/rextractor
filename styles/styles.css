@@ -241,16 +241,21 @@ body {
 
 textarea {
     margin-left: 3px;
-    border: 1px solid black;
+    border: 1px solid #999999;
     width: 600px;
+    border-radius: 5px;
     height: 200px;
     display: block;
 }
 
 input {
-    border: 1px solid black;
-    border-radius: 5px;
-    padding: 5px;
+    border: 1px solid #BFBFBF;
+    border-radius: 4px;
+    padding: 6px;
+}
+
+input[type="button"] {
+    cursor: pointer;
 }
 
 .ui-selectmenu-button span.ui-selectmenu-text {
@@ -293,6 +298,20 @@ select {
     line-height: 150%;
 }
 
+.document_relation {
+    margin-top: 10px;
+    background: white;
+    width: 500px;
+    max-height: 400px;
+    overflow: auto;
+    border: 1px solid silver;
+    border-radius: 3px;
+    line-height: 150%;
+}
+
+.chunk_subject,
+.chunk_object,
+.chunk_predicate,
 .chunk {
     background-color: yellow;
     cursor: pointer;
@@ -300,6 +319,21 @@ select {
     padding: 3px;
 }
 
+.chunk_subject {
+    background-color: green
+}
+
+.chunk_predicate {
+    background-color: cyan;
+}
+
+.chunk_object {
+    background-color: red;
+}
+
+.chunk_subject:hover,
+.chunk_object:hover,
+.chunk_predicate:hover,
 .chunk:hover {
     background-color: orange;
 }
@@ -327,4 +361,64 @@ select {
     color: #15699C;
     text-decoration: underline;
     cursor: pointer;
+}
+
+.relations_relation,
+.dbr_entity,
+.dbe_entity,
+.sb_component_setting {
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px silver solid;
+    margin: 10px;
+    margin-left: 20px;
+    box-shadow: silver 0px 0px 2px;
+    background: rgb(249,252,247);
+    background: -moz-linear-gradient(top,  rgba(249,252,247,1) 0%, rgba(245,249,240,1) 100%);
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(249,252,247,1)), color-stop(100%,rgba(245,249,240,1)));
+    background: -webkit-linear-gradient(top,  rgba(249,252,247,1) 0%,rgba(245,249,240,1) 100%);
+    background: -o-linear-gradient(top,  rgba(249,252,247,1) 0%,rgba(245,249,240,1) 100%);
+    background: -ms-linear-gradient(top,  rgba(249,252,247,1) 0%,rgba(245,249,240,1) 100%);
+    background: linear-gradient(to bottom,  rgba(249,252,247,1) 0%,rgba(245,249,240,1) 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f9fcf7', endColorstr='#f5f9f0',GradientType=0 );
+}
+
+.dbr_entity code,
+.dbe_entity code,
+.sb_component_setting code {
+    font-size: larger;
+    color: navy;
+}
+
+.form {
+    position: relative;
+}
+
+#new_submit_tooltip_en,
+#new_submit_tooltip_cz {
+    width: 400px;
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px silver solid;
+    box-shadow: silver 0px 0px 2px;
+    background: rgb(249,252,247);
+    background: -moz-linear-gradient(top,  rgba(249,252,247,1) 0%, rgba(245,249,240,1) 100%);
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(249,252,247,1)), color-stop(100%,rgba(245,249,240,1)));
+    background: -webkit-linear-gradient(top,  rgba(249,252,247,1) 0%,rgba(245,249,240,1) 100%);
+    background: -o-linear-gradient(top,  rgba(249,252,247,1) 0%,rgba(245,249,240,1) 100%);
+    background: -ms-linear-gradient(top,  rgba(249,252,247,1) 0%,rgba(245,249,240,1) 100%);
+    background: linear-gradient(to bottom,  rgba(249,252,247,1) 0%,rgba(245,249,240,1) 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f9fcf7', endColorstr='#f5f9f0',GradientType=0 );
+}
+
+#new_submit_tooltip_cz {
+    display: none;
+}
+
+.new_submit_tooltip_icon {
+    margin: 10px;
+    float: left;
 }

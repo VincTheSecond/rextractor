@@ -371,7 +371,7 @@ sub saveDescription {
         my $entity_node = $self->{xml}->createElement("entity");
         $entity_node->setAttribute("entity_id", $entity_id);
         $entity_node->setAttribute("dbe_id", $dbe_id) if (defined($dbe_id));
-        $entity_node->setAttribute("chunk_ids", join(" ", keys %real_chunk_ids));
+        $entity_node->setAttribute("chunk_ids", join(" ", sort {$a <=> $b} keys %real_chunk_ids));
 
         my $deptree = $self->{xml}->createElement("dependency_tree");
         foreach my $node_data (@dep_tree) {
