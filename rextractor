@@ -16,15 +16,15 @@ if (!scalar(@ARGV)) {
 my $COMMAND = shift(@ARGV);
 
 # Check command-line parameters
-if ($COMMAND =~ /(?:document-(?:state|submit|delete)|content-(?:html|relations))/ and scalar(@ARGV) != 1) {
+if ($COMMAND =~ /(?:document-(?:state|delete)|content-(?:html|relations))/ and scalar(@ARGV) != 1) {
     print STDERR "Use ./rextractor help for list of available commands.\n";
     exit 1;
 }
-if ($COMMAND =~ /(?:content-(?:chunks)|list-all)/ and scalar(@ARGV) != 2) {
+if ($COMMAND =~ /(?:document-submit|content-(?:chunks))/ and scalar(@ARGV) != 2) {
     print STDERR "Use ./rextractor help for list of available commands.\n";
     exit 1;
 }
-if ($COMMAND =~ /(?:list-(?:submit|convert|nlp|entity|relation|export))/ and scalar(@ARGV) != 4) {
+if ($COMMAND =~ /(?:list-(?:all|submit|convert|nlp|entity|relation|export))/ and scalar(@ARGV) != 4) {
     print STDERR "Use ./rextractor help for list of available commands.\n";
     exit 1;
 }
@@ -41,7 +41,7 @@ if ($COMMAND eq "help") {
     print STDERR "      Print current state of each daemon.\n\n";
     print STDERR "   document-state <document ID>\n";
     print STDERR "      Print current state of given document ID.\n\n";
-    print STDERR "   document-submit <path to file>\n";
+    print STDERR "   document-submit <strategy> <path to file>\n";
     print STDERR "      Submit given filne into RExtractor.\n\n";
     print STDERR "   document-delete <document ID>\n";
     print STDERR "      Delete given document from RExtractor system.\n\n";
@@ -55,7 +55,7 @@ if ($COMMAND eq "help") {
     print STDERR "      Return list of submitted documents in given time (if specified).\n\n";
     print STDERR "   list-convert <fromDate|NO> <toDate|NO> <fromDateTime|NO> <toDateTime|NO>\n";
     print STDERR "      Return list of converted documents in given time (if specified).\n\n";
-    print STDERR "   list-nlp\n";
+    print STDERR "   list-nlp <fromDate|NO> <toDate|NO> <fromDateTime|NO> <toDateTime|NO>\n";
     print STDERR "      Return list of documents processed by NLP tools in given time (if specified).\n\n";
     print STDERR "   list-entity <fromDate|NO> <toDate|NO> <fromDateTime|NO> <toDateTime|NO>\n";
     print STDERR "      Return list of documents with detected entities in given time (if specified).\n\n";
@@ -63,7 +63,9 @@ if ($COMMAND eq "help") {
     print STDERR "      Return list of documents with detected relations in given time (if specified).\n\n";
     print STDERR "   list-export <fromDate|NO> <toDate|NO> <fromDateTime|NO> <toDateTime|NO>\n";
     print STDERR "      Return list of exported documents in given time (if specified).\n\n";
-    print STDERR "   list-all <start> <limit>\n";
+    print STDERR "   list-all <start> <limit> <order_by> <order_dir>\n";
+    print STDERR "      <order_by> could be {id, status, ctime}\n";
+    print STDERR "      <order_dir> could be {ASC, DESC}\n";
     print STDERR "      Return list of submitted documents from given start offset and number of results.\n\n";
 }
 
@@ -112,8 +114,9 @@ if ($COMMAND eq "document-state") {
 ## Filename of the document is the second parameter of the command-line
 if ($COMMAND eq "document-submit") {
     # Check parameter
+    my $strategy = shift(@ARGV);
     my $filename = shift(@ARGV);
-    my $output = RExtractor::API::b2_document_submit(undef, undef, $filename);
+    my $output = RExtractor::API::b2_document_submit($strategy, undef, undef, $filename);
 
     print STDERR $output;
     exit $output =~ /ERROR/ ? 1 : 0;
@@ -186,8 +189,10 @@ if ($COMMAND =~ /^list-(submit|convert|nlp|entity|relation|export)$/) {
 if ($COMMAND eq "list-all") {
     my $start = shift(@ARGV);
     my $limit = shift(@ARGV);
+    my $order_by = shift(@ARGV);
+    my $order_dir = shift(@ARGV);
 
-    my $output = RExtractor::API::e7_list_all($start, $limit);
+    my $output = RExtractor::API::e7_list_all($start, $limit, $order_by, $order_dir);
     print $output;
     exit $output =~ /ERROR/ ? 1 : 0;
 }
