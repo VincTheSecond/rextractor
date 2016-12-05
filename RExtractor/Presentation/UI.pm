@@ -25,9 +25,14 @@ sub getHTMLHead {
     $output .= "\t<meta http-equiv='content-type' content='text/html; charset=utf-8'/>\n";
     $output .= "\t<title>RExtractor UI</title>\n\n";
     $output .= "\t<link rel=\"shortcut icon\" href=\"images/favicon.png\">\n";
+
+    # CSS
     $output .= "\t<link rel='stylesheet' type='text/css' href='styles/styles.css'/>\n";
+
+    # JS
     $output .= "\t<script type='text/javascript' src='javascript/jquery-1.7.1.min.js'></script>\n";
     $output .= "\t<script type='text/javascript' src='javascript/applets.js'></script>\n";
+
     $output .= "</head>\n\n";
     $output .= "<body>\n";
 
@@ -73,6 +78,9 @@ sub getMenu {
     $output .= "<li><a href='javascript:run_text(\"about\");'>Learn more</a>";
     $output .= "<li><a href='javascript:run_submit()'>Submit new job</a>";
     $output .= "<li><a href='javascript:run_list();'>Browse submitted jobs</a>";
+    $output .= "<li><a href='javascript:run_sb();'>Browse strategies</a>";
+    $output .= "<li><a href='javascript:run_dbe();'>Browse entities</a>";
+    $output .= "<li><a href='javascript:run_dbr();'>Browse relations</a>";
     $output .= "<li><a href='javascript:run_text(\"contact\");'>Contact</a>";
     $output .= "</ul>";
     $output .= "</div>";

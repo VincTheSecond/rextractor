@@ -5,7 +5,8 @@ use warnings;
 use POSIX;
 
 use RExtractor::Tools;
-use RExtractor::Conversion::INTLIB;
+use RExtractor::Conversion;
+use RExtractor::Strategy;
 
 $SIG{INT}  = \&_signalHandler;
 $SIG{KILL} = \&_signalHandler;
@@ -20,12 +21,14 @@ open($LOG, ">>./servers/logs/conversion.log");
 # Terminate if there is another running conversion server
 my $pid = RExtractor::Tools::readFile("./servers/pids/conversion.pid");
 if ($pid and kill(0, $pid)) {
+    RExtractor::Tools::deleteFile("./servers/pids/conversion.pid");
     RExtractor::Tools::error($LOG, "Another conversion server ($pid) is running. Terminating...\n");
     exit(1);
 }
 
 # Create own PID-file
 if (!RExtractor::Tools::writeFile("./servers/pids/conversion.pid", $$)) {
+    RExtractor::Tools::deleteFile("./servers/pids/conversion.pid");
     RExtractor::Tools::error($LOG, "Couldn't create a PID file. Terminating...");
     exit(1);
 }
@@ -49,8 +52,31 @@ while (42) {
 
     RExtractor::Tools::info($LOG, "Conversion of the document $document->{id} started.");
 
+    # Obtain strategy id
+    my $strategy_id = RExtractor::Tools::getDocumentStrategy($document->{id});
+
+    # Load strategy
+    my $Strategy = new RExtractor::Strategy();
+    if (!$Strategy->loadFile("./strategies/$strategy_id.xml")) {
+        RExtractor::Tools::error($LOG, "Couldn't load Stragety description './strategies/$strategy_id.xml'.");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "310 Error occured during document conversion.");
+        RExtractor::Tools::deleteFile("./data/submitted/$document->{id}.lock");
+        next;
+    }
+
+    # Check, if Strategy configuration contains all needed attributes
+    if (!$Strategy->check("conversion")) {
+        RExtractor::Tools::error($LOG, "Extraction strategy is incorrect or incomplete. ($document->{id}).");
+        RExtractor::Tools::setDocumentStatus($document->{id}, "310 Error occured during document conversion.");
+        RExtractor::Tools::deleteFile("./data/submitted/$document->{id}.lock");
+        next;
+    }
+
+    RExtractor::Tools::info($LOG, "Applying conversion strategy '$strategy_id'.");
+
     # If there is document, start conversion
-    my $Convertor = new RExtractor::Conversion::INTLIB();
+    eval("use $Strategy->{conversion}{package}");
+    my $Convertor = eval("new $Strategy->{conversion}{package}");
     if (!$Convertor->loadFile($document->{filename})) {
         RExtractor::Tools::error($LOG, "Error occured while parsing XML document ($document->{id}).");
         RExtractor::Tools::setDocumentStatus($document->{id}, "310 Error occured during document conversion.");

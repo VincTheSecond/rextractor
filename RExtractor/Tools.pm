@@ -59,6 +59,15 @@ sub getDocumentStatus {
     return $data;
 }
 
+sub getDocumentStrategy {
+    my ($document_id) = @_;
+
+    my $data = `head -n 1 ./data/logs/$document_id.log 2>/dev/null | sed -e 's/100 Submited strategy: //' | sed -e 's/\\.//g'`;
+    chomp($data);
+
+    return $data;
+}
+
 sub setDocumentStatus {
     my ($document_id, $status) = @_;
 
