@@ -43,10 +43,10 @@ sub a3_server_state {
         my $pid = RExtractor::Tools::readFile("./servers/pids/" . lc($server) . ".pid");
         my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size, $atime, $mtime, $ctime, $blksize, $blocks) = stat("./servers/pids/" . lc($server) . ".pid");
         if ($pid and (time() - $mtime) < 30 * 60) {
-            push(@output, "$server server is ON.\n");
+            push(@output, "$server server is UP.\n");
         }
         else {
-            push(@output, "$server server is OFF.\n");
+            push(@output, "$server server is DOWN.\n");
         }
     }
 
@@ -566,3 +566,4 @@ sub h1_dbr_html {
 }
 
 1;
+

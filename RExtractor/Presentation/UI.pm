@@ -24,14 +24,14 @@ sub getHTMLHead {
     $output .= "<head>\n";
     $output .= "\t<meta http-equiv='content-type' content='text/html; charset=utf-8'/>\n";
     $output .= "\t<title>RExtractor UI</title>\n\n";
-    $output .= "\t<link rel=\"shortcut icon\" href=\"images/favicon.png\">\n";
+    $output .= "\t<link rel=\"shortcut icon\" href=\"/rextractor/images/favicon.png\">\n";
 
     # CSS
-    $output .= "\t<link rel='stylesheet' type='text/css' href='styles/styles.css'/>\n";
+    $output .= "\t<link rel='stylesheet' type='text/css' href='/rextractor/styles/styles.css'/>\n";
 
     # JS
-    $output .= "\t<script type='text/javascript' src='javascript/jquery-1.7.1.min.js'></script>\n";
-    $output .= "\t<script type='text/javascript' src='javascript/applets.js'></script>\n";
+    $output .= "\t<script type='text/javascript' src='/rextractor/javascript/jquery-1.7.1.min.js'></script>\n";
+    $output .= "\t<script type='text/javascript' src='/rextractor/javascript/applets.js'></script>\n";
 
     $output .= "</head>\n\n";
     $output .= "<body>\n";
@@ -46,7 +46,7 @@ sub getHeader {
     $output .= "<!-- Logo & menu -->\n";
     $output .= "<div id='header'>\n";
     $output .= "\t<div id='header_content'>\n";
-    $output .= "\t\t<img src='images/logo.png' class='header-logo'>\n";
+    $output .= "\t\t<img src='/rextractor/images/logo.png' class='header-logo'>\n";
     $output .= "\t</div>";
     $output .= "</div>\n\n";
 
@@ -148,7 +148,7 @@ sub getFooter {
 
     my $output = "";
     $output .= "<div id='footer'>";
-    $output .= "<p>&copy; 2015 Vincent Kríž</p>";
+    $output .= "<p>&copy; 2015--now Vincent Kríž</p>";
     $output .= "</div>";
 
     return $output;
