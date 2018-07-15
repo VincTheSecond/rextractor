@@ -83,7 +83,7 @@ function run_document(id) {
  */
 function applet_server_status() {
     jQuery.ajax({
-        url: "./index.cgi?command=server-state",
+        url: "/rextractor/index.cgi?command=server-state",
         success: function(data) {
             var servers = data.split('\n');
 
@@ -91,15 +91,15 @@ function applet_server_status() {
             var output = "";
             output += "<table>";
             for (var i = 0; i < servers.length; i++) {
-                if (!servers[i].match(/(ON|OFF)/)) {
+                if (!servers[i].match(/(UP|DOWN)/)) {
                     continue;
                 }
 
-                if (servers[i].match(/ON/)) {
-                    output += "<tr><td><img src='images/green.png'></td><td>" + servers[i] + "</td></tr>";
+                if (servers[i].match(/UP/)) {
+                    output += "<tr><td><img src='/rextractor/images/green.png'></td><td>" + servers[i] + "</td></tr>";
                 }
                 else {
-                    output += "<tr><td><img src='images/red.png'></td><td>" + servers[i] + "</td></tr>";
+                    output += "<tr><td><img src='/rextractor/images/red.png'></td><td>" + servers[i] + "</td></tr>";
                 }
             }
             output += "</table>";
@@ -121,7 +121,7 @@ function applet_text_box(text_id) {
     clearTimeout(timeout);
 
     jQuery.ajax({
-        url: "./texts/" + text_id + ".html",
+        url: "/rextractor/texts/" + text_id + ".html",
         success: function(data) {
             // Format HTML output
             var output = "";
@@ -166,7 +166,7 @@ function applet_list(id_to_highlight, refresh) {
     }
 
     jQuery.ajax({
-        url: "./index.cgi?command=list-all&start=" + list_start + "&limit=" + list_limit + "&order_by=" + list_order_by + "&order_dir=" + list_order_dir,
+        url: "/rextractor/index.cgi?command=list-all&start=" + list_start + "&limit=" + list_limit + "&order_by=" + list_order_by + "&order_dir=" + list_order_dir,
         success: function(data) {
             var jobs = data.split('\n');
 
@@ -176,26 +176,26 @@ function applet_list(id_to_highlight, refresh) {
             var sorting_data = jobs[1].split("\t");
             if (sorting_data[3] == "id") {
                 if (sorting_data[4] == "DESC") {
-                    sorting[0] = "<img src='images/sort-desc.png'>";
+                    sorting[0] = "<img src='/rextractor/images/sort-desc.png'>";
                 }
                 else {
-                    sorting[0] = "<img src='images/sort-asc.png'>";
+                    sorting[0] = "<img src='/rextractor/images/sort-asc.png'>";
                 }
             }
             if (sorting_data[3] == "ctime") {
                 if (sorting_data[4] == "DESC") {
-                    sorting[1] = "<img src='images/sort-desc.png'>";
+                    sorting[1] = "<img src='/rextractor/images/sort-desc.png'>";
                 }
                 else {
-                    sorting[1] = "<img src='images/sort-asc.png'>";
+                    sorting[1] = "<img src='/rextractor/images/sort-asc.png'>";
                 }
             }
             if (sorting_data[3] == "status") {
                 if (sorting_data[4] == "DESC") {
-                    sorting[2] = "<img src='images/sort-desc.png'>";
+                    sorting[2] = "<img src='/rextractor/images/sort-desc.png'>";
                 }
                 else {
-                    sorting[2] = "<img src='images/sort-asc.png'>";
+                    sorting[2] = "<img src='/rextractor/images/sort-asc.png'>";
                 }
             }
 
@@ -225,13 +225,13 @@ function applet_list(id_to_highlight, refresh) {
                 // Process icon
                 var icon = "";
                 if (fields[2].match(/[34567]00/)) {
-                    icon = "images/greening.gif";
+                    icon = "/rextractor/images/greening.gif";
                 }
                 if (fields[2].match(/\d10/)) {
-                    icon = "images/red.png";
+                    icon = "/rextractor/images/red.png";
                 }
                 if (fields[2].match(/(200|[34567]20)/)) {
-                    icon = "images/green.png";
+                    icon = "/rextractor/images/green.png";
                 }
 
                 // Progress bar
@@ -344,7 +344,7 @@ function applet_submit() {
     // Box with sample data
     var tooltip = "";
     tooltip += "<div id='new_submit_tooltip_en'>";
-    tooltip += "<img src='./images/icon_idea.png' class='new_submit_tooltip_icon'>";
+    tooltip += "<img src='/rextractor/images/icon_idea.png' class='new_submit_tooltip_icon'>";
     tooltip += "<p>Samples of English legal texts: ";
     tooltip += "<a href='http://www.usoud.cz/en/constitution-of-the-czech-republic/' target='_blank'>Constitution of the Czech Republic</a>, ";
     tooltip += "<a href='http://www.cnb.cz/miranda2/export/sites/www.cnb.cz/en/legislation/acts/download/act_on_cnb.pdf' target='_blank'>Bank Act</a>, ";
@@ -352,7 +352,7 @@ function applet_submit() {
     tooltip += "<a href='http://www.usoud.cz/en/charter-of-fundamental-rights-and-freedoms/' target='_blank'>Charter of fundamental rights and freedoms</a>";
     tooltip += "</div>";
     tooltip += "<div id='new_submit_tooltip_cz'>";
-    tooltip += "<img src='./images/icon_idea.png' class='new_submit_tooltip_icon'>";
+    tooltip += "<img src='/rextractor/images/icon_idea.png' class='new_submit_tooltip_icon'>";
     tooltip += "<p>Samples of Czech legal texts: ";
     tooltip += "<a href='http://www.zakonyprolidi.cz/' target='_blank'>ZákonyProLidi.cz</a>, ";
     tooltip += "<a href='https://portal.gov.cz/app/zakony/?path=/portal/obcan/' target='_blank'>Portál veřejné správy</a> ";
@@ -438,7 +438,7 @@ function applet_submit_click() {
 
     // Everything OK, submit query on the server
     jQuery.ajax({
-        url: "./index.cgi?command=document-submit",
+        url: "/rextractor/index.cgi?command=document-submit",
         data: {
           doc_id: id,
           doc_content: content,
@@ -534,7 +534,7 @@ function applet_sb_click() {
 
     // Everything OK, submit query on the server
     jQuery.ajax({
-        url: "./index.cgi?command=strategy-html",
+        url: "/rextractor/index.cgi?command=strategy-html",
         data: {
           strategy_id: strategy,
         },
@@ -607,7 +607,7 @@ function applet_dbe_click() {
 
     // Everything OK, submit query on the server
     jQuery.ajax({
-        url: "./index.cgi?command=dbe-html",
+        url: "/rextractor/index.cgi?command=dbe-html",
         data: {
           dbe_id: dbe_id,
         },
@@ -680,7 +680,7 @@ function applet_dbr_click() {
 
     // Everything OK, submit query on the server
     jQuery.ajax({
-        url: "./index.cgi?command=dbr-html",
+        url: "/rextractor/index.cgi?command=dbr-html",
         data: {
           dbr_id: dbr_id,
         },
@@ -711,7 +711,7 @@ function clear_main_column() {
 
 function get_document_relations(doc_id, box) {
     jQuery.ajax({
-        url: "./index.cgi?command=content-relations&doc_id=" + doc_id,
+        url: "/rextractor/index.cgi?command=content-relations&doc_id=" + doc_id,
         success: function(data) {
             var output = "";
             output += "<h3>Relations</h3>";
@@ -749,7 +749,7 @@ function get_document_content(doc_id, box) {
     box.find(".content").html("<h3>Entities</h3><div class='loading'></div>");
 
     jQuery.ajax({
-        url: "./index.cgi?command=content-html&doc_id=" + doc_id,
+        url: "/rextractor/index.cgi?command=content-html&doc_id=" + doc_id,
         success: function(data) {
             data = data.replace("[OK]\n", "");
             box.find(".content").html("<h3>Entities</h3><div class='document'>" + data + "</div><div class='entities'></div><div style='clear: both'></div>");
@@ -770,7 +770,7 @@ function highlight_chunk(doc_id, chunk_id, box) {
     box.find(".entities").slideDown();
 
     jQuery.ajax({
-        url: "./index.cgi?command=content-chunks&doc_id=" + doc_id + "&chunk_id=" + chunk_id,
+        url: "/rextractor/index.cgi?command=content-chunks&doc_id=" + doc_id + "&chunk_id=" + chunk_id,
         success: function(data) {
             // Fill entities box
             var output = "";
@@ -827,7 +827,7 @@ function get_document_state(id, box) {
     }
 
     jQuery.ajax({
-        url: "./index.cgi?command=document-state&doc_id=" + id,
+        url: "/rextractor/index.cgi?command=document-state&doc_id=" + id,
         success: function(data) {
             if (data.match(/ERROR/)) {
                 box.find(".state").html("<p class='error'>Couldn't retrieve document state.</p>");
@@ -837,19 +837,19 @@ function get_document_state(id, box) {
             var icon = "";
             var text = "";
             if (data.match(/[34567]00/)) {
-                icon = "images/greening.gif";
+                icon = "/rextractor/images/greening.gif";
                 text = "At this moment, document is processing by one of the RExtractor components.";
             }
             if (data.match(/\d10/)) {
-                icon = "images/red.png";
+                icon = "/rextractor/images/red.png";
                 text = "An error occured during document processing. Job was cancelled."
             }
             if (data.match(/(200|[3456]20)/)) {
-                icon = "images/green.png";
+                icon = "/rextractor/images/green.png";
                 text = "Document is waiting for another component.";
             }
             if (data.match(/(720)/)) {
-                icon = "images/green.png";
+                icon = "/rextractor/images/green.png";
                 text = "Document processing is complete.";
             }
 
@@ -890,7 +890,7 @@ function get_document_state(id, box) {
                 }
 
                 jQuery.ajax({
-                    url: "./index.cgi?command=document-delete&doc_id=" + id,
+                    url: "/rextractor/index.cgi?command=document-delete&doc_id=" + id,
                     success: function(data) {
                         if (data.match(/\[OK\]/)) {
                             message = "<p class='ok'>Document " + id + " was deleted from the RExtractor system.</p>";
